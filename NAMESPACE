@@ -1,0 +1,32 @@
+################################################
+## import name space
+################################################
+import(stats)
+import(graphics)
+import(grDevices)
+import(utils)
+import(coda)
+
+
+
+
+################################################
+## useDynLib
+################################################
+
+useDynLib(EpiILM, .registration = TRUE)
+
+
+################################################
+## functions
+################################################
+
+
+export(	epidata,
+       	epilike,
+       	epimcmc,
+       	epicurve,
+	epispatial,
+        epiBR0,
+        epidic	
+       )

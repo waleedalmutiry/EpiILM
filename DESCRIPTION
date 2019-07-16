@@ -1,0 +1,14 @@
+Package: EpiILM
+Type: Package
+Title: Spatial and Network Based Individual Level Models for Epidemics
+Version: 1.4.2
+Date: 2018-03-09
+Author: Vineetha Warriyar. K. V. and Rob Deardon
+Maintainer: Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca>
+Description: Provides tools for simulating from discrete-time individual level models for infectious disease data analysis. This epidemic model class contains spatial and contact-network based models with two disease types: Susceptible-Infectious (SI) and Susceptible-Infectious-Removed (SIR).  
+License: GPL (>= 2)
+Depends: coda, graphics, grDevices, stats, utils, R (>= 3.2.0)
+NeedsCompilation: yes
+Packaged: 2018-03-09 17:52:50 UTC; Vineetha
+Repository: CRAN
+Date/Publication: 2018-03-09 18:04:43 UTC
