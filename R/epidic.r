@@ -2,7 +2,8 @@
 # Part of the R/EpiILM package
 #
 # AUTHORS:
-#         Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca> and
+#         Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca>,
+#         Waleed Almutiry <wkmtierie@qu.edu.sa>, and
 #         Rob Deardon <robert.deardon@ucalgary.ca>
 #
 #

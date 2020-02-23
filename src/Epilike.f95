@@ -2,7 +2,8 @@
 !# MODULE: likesubprograms
 !#
 !# AUTHORS:
-!#         Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca> and
+!#         Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca>,
+!#         Waleed Almutiry <wkmtierie@qu.edu.sa>, and
 !#         Rob Deardon <robert.deardon@ucalgary.ca>
 !#
 !# DESCRIPTION:
@@ -44,21 +45,21 @@
 
     contains
 
-    subroutine like(x, y, tau, n, tmin, tmax, ns, ni, alpha, beta, &
-                   & spark, covmat, val) bind(C, name="like_")
+    subroutine like(x, y, tau, n, tmin, tmax, ns, nt, ni, alpha, phi, beta, &
+                   & spark, covmatsus, covmattrans, val) bind(C, name="like_")
     !log-likelihood for purely spatial model: SI
     implicit none
 
     !Declarations
-    integer (C_INT), intent(in) :: n, tau(n), tmax, ns, ni, tmin
-    real (C_DOUBLE), intent(in) :: alpha(ns), beta(ni), spark  !parameters
+    integer (C_INT), intent(in) :: n, tau(n), tmax, ns, nt, ni, tmin
+    real (C_DOUBLE), intent(in) :: alpha(ns), phi(nt), beta(ni), spark  !parameters
     real (C_DOUBLE), intent(in) :: x(n), y(n)                  !locations
-    real (C_DOUBLE), intent(in) :: covmat(n, ns)               !covariates
+    real (C_DOUBLE), intent(in) :: covmatsus(n, ns), covmattrans(n, nt)               !covariates
     real (C_DOUBLE), intent(out):: val                         !result
 
-    integer          :: i, j, t
-    double precision :: eu(n, n), Somega(n)
-    double precision :: dx1, dx2, p1, p2
+    integer (C_INT)          :: i, j, t
+    real (C_DOUBLE) :: eu(n, n), Somega(n), Tomega(n)
+    real (C_DOUBLE) :: dx1, dx2, p1, p2
 
     !Calculate the distance matrix
     do i = 1, n
@@ -68,7 +69,8 @@
       end do
     end do
 
-    Somega = matmul(covmat,alpha) !susceptibility function
+    Somega = matmul(covmatsus,alpha) !susceptibility function
+    Tomega = matmul(covmattrans,phi) !transmissibility function
 
     val = 0.0d0
     do t = tmin, (tmax-1)
@@ -78,21 +80,21 @@
           dx1 = 0.0d0
           do j = 1, n
             if ((tau(j) .LT. (t+1)) .AND. (tau(j) .NE. 0)) then
-              dx1 = dx1 + (eu(i,j)**(-beta(ni)))
+              dx1 = dx1 + ((eu(i,j)**(-beta(ni)))*Tomega(j))
             end if
           end do
-        p1 = 1.0d0 - exp(-(Somega(i) * dx1 + spark))
+        p1 = 1.0d0 - exp(-((Somega(i) * dx1) + spark))
         val = val + log(p1)
         end if
         !susceptible period
-        if ((tau(i) .GT. (t+1)) .OR. (tau(i)== 0))then
+        if ((tau(i) .GT. (t+1)) .OR. (tau(i) == 0)) then
           dx2 = 0.0d0
           do j = 1, n
             if ((tau(j) .LT. (t+1)) .AND. (tau(j) .NE. 0))then
-              dx2 = dx2 + (eu(i,j)**(-beta(ni)))
+              dx2 = dx2 + ((eu(i,j)**(-beta(ni)))*Tomega(j))
             end if
           end do
-        p2 = exp(-(Somega(i) * dx2 + spark))
+        p2 = exp(-((Somega(i) * dx2) + spark))
         val = val + log(p2)  !result
         end if
       end do
@@ -102,20 +104,20 @@
 
 !######################################################################
 
-    subroutine likesir(x, y, tau, lambda, n, tmin, tmax, ns, ni, alpha, &
-                     & beta, spark, covmat, val) bind(C, name="likesir_")
+    subroutine likesir(x, y, tau, lambda, n, tmin, tmax, ns, nt, ni, alpha, &
+                     & phi, beta, spark, covmatsus, covmattrans, val) bind(C, name="likesir_")
     !log-likelihood for purely spatial model: SIR
     implicit none
 
     !Declarations
-    integer (C_INT), intent(in) :: n, tau(n), lambda(n), tmax, ns, ni, tmin
-    real (C_DOUBLE), intent(in) :: alpha(ns), beta(ni), spark  !parameters
+    integer (C_INT), intent(in) :: n, tau(n), lambda(n), tmax, ns, nt, ni, tmin
+    real (C_DOUBLE), intent(in) :: alpha(ns), beta(ni), phi(nt), spark  !parameters
     real (C_DOUBLE), intent(in) :: x(n), y(n)                  !locations
-    real (C_DOUBLE), intent(in) :: covmat(n, ns)               !covariates
+    real (C_DOUBLE), intent(in) :: covmatsus(n, ns), covmattrans(n, nt)               !covariates
     real (C_DOUBLE), intent(out):: val                         !result
 
     integer          :: i, j, t
-    double precision :: eu(n,n), Somega(n)
+    double precision :: eu(n,n), Somega(n), Tomega(n)
     double precision :: dx1, dx2, p1, p2
 
     !Calculate the distance matrix
@@ -126,7 +128,8 @@
       end do
     end do
 
-    Somega = matmul(covmat, alpha) !susceptibility function
+    Somega = matmul(covmatsus, alpha) !susceptibility function
+    Tomega = matmul(covmattrans, phi) !transmissibility function
 
     val = 0.0d0
     do t = tmin, (tmax-1)
@@ -137,11 +140,11 @@
             do j = 1, n
               if (tau(j) .NE. 0) then
                 if ((tau(j) .LT. (t+1)) .AND. (tau(j) + lambda(j) .GE. (t+1))) then
-                  dx1 = dx1 + (eu(i,j)**(-beta(ni)))
+                  dx1 = dx1 + ((eu(i,j)**(-beta(ni)))*Tomega(j))
                 end if
               end if
             end do
-         p1 = 1.0d0 - exp(-(Somega(i) * dx1 + spark))
+         p1 = 1.0d0 - exp(-((Somega(i) * dx1) + spark))
          val = val + log(p1)
         end if
         !susceptible period
@@ -150,11 +153,11 @@
             do j = 1, n
               if (tau(j) .NE. 0) then
                 if ((tau(j) .LT. (t+1)) .AND. (tau(j)+lambda(j) .GE. (t+1)))then
-                  dx2 = dx2 + (eu(i,j)**(-beta(ni)))
+                  dx2 = dx2 + ((eu(i,j)**(-beta(ni)))*Tomega(j))
                 end if
               end if
             end do
-          p2 = exp(-(Somega(i) * dx2 + spark))
+          p2 = exp(-((Somega(i) * dx2) + spark))
           val = val + log(p2)  !result
         end if
       end do
@@ -164,23 +167,24 @@
 
 !######################################################################
 
-    subroutine likecon(tau, n, ns, ni, tmin, tmax, alpha, beta, &
-                      & spark, covmat, network, val) bind(C, name="likecon_")
+    subroutine likecon(tau, n, ns, nt, ni, tmin, tmax, alpha, phi, beta, &
+                      & spark, covmatsus, covmattrans, network, val) bind(C, name="likecon_")
     !log-likelihood for contact network model: SI
     implicit none
 
     !Declarations
-    integer (C_INT), intent(in)  :: n, tmax, ns, ni, tmin
+    integer (C_INT), intent(in)  :: n, tmax, ns, nt, ni, tmin
     integer (C_INT), intent(in)  :: tau(n)                     !infection times
-    real (C_DOUBLE), intent(in)  :: alpha(ns), beta(ni), spark !parameters
-    real (C_DOUBLE), intent(in)  :: covmat(n,ns)               !covariates
+    real (C_DOUBLE), intent(in)  :: alpha(ns), phi(nt), beta(ni), spark !parameters
+    real (C_DOUBLE), intent(in)  :: covmatsus(n,ns), covmattrans(n,nt)               !covariates
     real (C_DOUBLE), intent(in)  :: network(n,n,ni)            !contact network
     real (C_DOUBLE), intent(out) :: val                        !result
 
     integer          :: i, j, t, k
-    double precision :: dx1, dx2, p1, p2, Somega(n)
+    double precision :: dx1, dx2, p1, p2, Somega(n), Tomega(n)
 
-    Somega = matmul(covmat,alpha) !susceptibility function
+    Somega = matmul(covmatsus,alpha) !susceptibility function
+    Tomega = matmul(covmattrans,phi) !transmissibility function
 
     val = 0.0d0
     do t = tmin, (tmax-1)
@@ -191,11 +195,11 @@
             do j = 1, n
               if ((tau(j) .LT. (t+1)) .AND. (tau(j) .NE. 0)) then
                 do k = 1, ni
-                  dx1 = dx1 + beta(k) * network(i,j,k)
+                  dx1 = dx1 + ((beta(k) * network(i,j,k))*Tomega(j))
                 end do
               end if
             end do
-         p1 = 1.0d0 - exp(-(Somega(i) * dx1 + spark))
+         p1 = 1.0d0 - exp(-((Somega(i) * dx1) + spark))
          val = val + log(p1)
         end if
         !susceptible period
@@ -204,11 +208,11 @@
             do j = 1, n
               if ((tau(j) .LT. (t+1)) .AND. (tau(j) .NE. 0))then
                 do k = 1, ni
-                  dx2 = dx2 + beta(k) * network(i,j,k)
+                  dx2 = dx2 + ((beta(k) * network(i,j,k))*Tomega(j))
                 end do
               end if
             end do
-         p2 = exp(-(Somega(i) * dx2 + spark))
+         p2 = exp(-((Somega(i) * dx2) + spark))
          val = val + log(p2)  !result
         end if
      end do
@@ -218,23 +222,24 @@
 
 !######################################################################
 
-    subroutine likeconsir(tau, lambda, n, ns, ni, tmin, tmax, alpha, beta, &
-         & spark, covmat, network, val) bind(C, name="likeconsir_")
+    subroutine likeconsir(tau, lambda, n, ns, nt, ni, tmin, tmax, alpha, phi, beta, &
+         & spark, covmatsus, covmattrans, network, val) bind(C, name="likeconsir_")
     !log-likelihood for contact network model: SIR
     implicit none
 
     !Declarations
-    integer (C_INT), intent(in)  :: n, tmax, ns, ni, tmin
+    integer (C_INT), intent(in)  :: n, tmax, ns, nt, ni, tmin
     integer (C_INT), intent(in)  :: tau(n), lambda(n)          !inftime and infperiod
-    real (C_DOUBLE), intent(in)  :: alpha(ns), beta(ni), spark !parameters
-    real (C_DOUBLE), intent(in)  :: covmat(n,ns)               !covariates
+    real (C_DOUBLE), intent(in)  :: alpha(ns), phi(nt), beta(ni), spark !parameters
+    real (C_DOUBLE), intent(in)  :: covmatsus(n,ns), covmattrans(n,nt)               !covariates
     real (C_DOUBLE), intent(in)  :: network(n,n,ni)            !contact network
     real (C_DOUBLE), intent(out) :: val                        !result
 
     integer           :: i, j, t, k
-    double precision  :: dx1, dx2, p1, p2, somega(n)
+    double precision  :: dx1, dx2, p1, p2, Somega(n), Tomega(n)
 
-    somega = matmul(covmat,alpha) !susceptibility function
+    Somega = matmul(covmatsus,alpha) !susceptibility function
+    Tomega = matmul(covmattrans,phi) !transmissibility function
 
     val = 0.0d0
     do t = tmin, (tmax-1)
@@ -246,11 +251,11 @@
               if ((tau(j) .LT. (t+1)) .AND. (tau(j) .NE. 0) .AND. &
                        & (tau(j)+lambda(j) .GE. (t+1))) then
                  do k = 1, ni
-                   dx1 = dx1 + beta(k) * network(i, j, k)
+                   dx1 = dx1 + ((beta(k) * network(i, j, k))*Tomega(j))
                  end do
               end if
             end do
-         p1 = 1.0d0 - exp(-(somega(i) * dx1 + spark))
+         p1 = 1.0d0 - exp(-((Somega(i) * dx1) + spark))
          val = val + log(p1)
         end if
         !susceptible period
@@ -260,11 +265,11 @@
               if ((tau(j) .LT. (t+1)) .AND. (tau(j) .NE. 0) .AND.&
                      & (tau(j)+lambda(j) .GE. (t+1)))then
                 do k = 1, ni
-                  dx2 = dx2 + beta(k) * network(i,j,k)
+                  dx2 = dx2 + ((beta(k) * network(i,j,k))*Tomega(j))
                 end do
               end if
             end do
-         p2 = exp(-(somega(i) * dx2 + spark))
+         p2 = exp(-((Somega(i) * dx2) + spark))
          val = val + log(p2)  !result
         end if
       end do
@@ -273,12 +278,3 @@
     end subroutine likeconsir
 
     end module likesubprograms
-
-
-
-
-
-
-
-
-

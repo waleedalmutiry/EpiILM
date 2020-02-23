@@ -2,7 +2,8 @@
 # Part of the R/EpiILM package
 #
 # AUTHORS:
-#         Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca> and
+#         Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca>,
+#         Waleed Almutiry <wkmtierie@qu.edu.sa>, and
 #         Rob Deardon <robert.deardon@ucalgary.ca>
 #
 # Algorithm based on:
@@ -15,40 +16,70 @@
 # a copy of which is available at http://www.r-project.org/Licenses/.
 ################################################################################
 
-epidata <- function(type, n, tmin = NULL, tmax, alpha, beta, spark = NULL, Sformula = NULL,
-                    x = NULL, y = NULL, inftime = NULL, infperiod = NULL, contact = NULL,
-                    tempseed = NULL) {
+epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta = NULL, spark = NULL,
+                    Sformula = NULL, Tformula = NULL, x = NULL, y = NULL,
+                    inftime = NULL, infperiod = NULL, contact = NULL) {
 
   # Error checks for input arguments
-  if (is.null(type) || !(type %in% c("SI", "SIR"))) {
+  if (is.null(type) | !(type %in% c("SI", "SIR"))) {
        stop("Specify type as \"SI\" or \"SIR\" ", call. = FALSE)
   }
-  
-  if (is.null(tempseed)) {
-      tempseed <- 0
+
+
+  ns <- length(sus.par)
+  if  (!is.null(trans.par)) {
+
+    nt <- length(trans.par)
+    flag.trans <- 1
+    phi <- trans.par
+
+  } else {
+
+    nt <- 1
+    flag.trans <- 0
+    phi <- 1
+
   }
-  
-  ns <- length(alpha)
-  ni <- length(beta)
-  
+
+  if (is.null(contact) &  (is.null(x) | is.null(y))) {
+      stop('epidata: Specify contact network or x, y coordinates')
+  }
+
+  if (is.null(contact)) {
+    ni <- length(beta)
+    if (ni != 1) {
+      stop("epidata: Check the beta parameter input. The considered distance-based ILM needs only one spatial parameter", call. = FALSE)
+    }
+    if (!is.null(x)) {
+      if ((length(y) != n) | (length(x) != n)) {
+        stop('epidata: Length of x or y is not compatible ')
+      }
+    }
+  } else {
+    if (length(contact)/(n * n) == 1) {
+      ni <- 1
+      if (is.null(beta)) {
+        beta <- 1
+      } else {
+        stop("epidata: As the model has only one contact network, The model does not need a network parameter beta, beta must be assigned to its default values = NULL", call. = FALSE)
+      }
+    } else if (length(contact)/(n * n) > 1) {
+      ni <- length(beta)
+      if (length(contact)/(n * n) != ni) {
+        stop('epidata: Dimension of beta and the number of contact networks are not matching')
+      }
+    }
+    network <- array(contact, c(n, n, ni))
+  }
+
   if (is.null(tmin)){
     tmin <- 1
   }
-  
+
   if (is.null(spark)) {
     spark <- 0
   }
-  
-  if (is.null(contact) &  (is.null(x) || is.null(y))) {
-      stop('epidata: Specify contact network or x, y coordinates')
-  }
-  
-  if (!is.null(x)) {
-    if ((length(y) != n) || (length(x) != n)) {
-      stop('epidata: Length of x or y is not compatible ')
-    }
-  }
-  
+
   if (!is.null(inftime)) {
       if ((length(inftime) != n)) {
         stop('epidata: Length of inftime is not compatible ')
@@ -56,11 +87,11 @@ epidata <- function(type, n, tmin = NULL, tmax, alpha, beta, spark = NULL, Sform
   } else {
         inftime <- rep(0, n)
   }
-  
-  if (is.null(infperiod) && type == "SIR") {
-    stop(' epidata: Specify removal distance, infperiod ')
+
+  if (is.null(infperiod) & type == "SIR") {
+    stop(' epidata: Specify removal, infperiod')
   }
-  
+
   if (!is.null(infperiod)) {
       if (length(infperiod) != n) {
         stop('epidata: Length of infperiod is not compatible')
@@ -70,121 +101,135 @@ epidata <- function(type, n, tmin = NULL, tmax, alpha, beta, spark = NULL, Sform
       }
        remt <- rep(0, n)
   }
- 
- # formula for susceptibility (covariate) function
-  if (!is.null(Sformula)) {
-    covmat <- model.matrix(Sformula)
-    
-    if ((ncol(covmat) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
-      stop('epidata: Check Sformula (no intercept term) and the dimension of alpha')
+
+  # formula for susceptibility (covariate) function
+   if (!is.null(Sformula)) {
+     covmat.sus <- model.matrix(Sformula)
+
+     if ((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
+       stop('epidata: Check Sformula (no intercept term) and the dimension of sus.par')
+     }
+
+     if ((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) {
+       stop('epidata: Check Sformula (intercept term) and the dimension of sus.par')
+     }
+   } else {
+       if (ns == 1) {
+         covmat.sus <- matrix(1.0, nrow = n, ncol = ns)
+       }
+       if (ns > 1) {
+         stop('epidata: Please specify the susceptibility covariate')
+       }
+   }
+
+   # formula for transmissibility (covariate) function
+   if (flag.trans == 1) {
+     if (is.null(Tformula)) {
+       stop("epidata: Tformula is missing. It has to be specified with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
+     } else if (!is.null(Tformula)) {
+   		covmat.trans <- model.matrix(Tformula)
+
+   		if ((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) {
+   			stop("epidata: Check Tformula. It has to be with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
+   		}
     }
-    
-    if ((ncol(covmat) > length(all.vars(Sformula))) & (ns != ncol(covmat))) {
-      stop('epidata: Check Sformula (intercept term) and the dimension of alpha')
-    }
-  } else {
-      if (ns == 1) {
-        covmat <- matrix(1.0, nrow = n, ncol = ns)
-      }
-      if (ns > 1) {
-        stop('epidata: Please specify covariate')
-      }
-  }
- 
+   } else if (flag.trans == 0) {
+   	covmat.trans <- matrix(1.0, nrow = n, ncol = nt)
+   }
+
  # Calling fortran subroutine - Purely Spatial: Susceptible-Infectious(SI)
-  if ((type == "SI") && is.null(contact)) {
+  if ((type == "SI") & is.null(contact)) {
     tmp <- .Fortran("dataxy",
-                     x = as.double(x),
-                     y = as.double(y),
+                    x = as.vector(x, mode = "double"),
+                    y = as.vector(y, mode = "double"),
                      n = as.integer(n),
                      tmin = as.integer(tmin),
                      tmax = as.integer(tmax),
                      ns = as.integer(ns),
+                     nt = as.integer(nt),
                      ni = as.integer(ni),
-                     alpha = as.numeric(alpha),
-                     beta = as.numeric(beta),
+                     alpha = as.vector(sus.par, mode = "double"),
+                     phi = as.vector(phi, mode = "double"),
+                     beta =as.vector(beta, mode = "double"),
                      spark = as.numeric(spark),
-                     covmat = as.vector(covmat),
-                     tau = as.integer(inftime),
-                     tempseed = as.integer(tempseed)
+                     covmatsus = matrix(as.double(covmat.sus), ncol = ncol(covmat.sus), nrow = n),
+                     covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
+                     tau = as.vector(inftime, mode = "integer")
                      )
-                     
-    result1 <- list(inftime = tmp$tau)
+
+    result1 <- list(type = type, XYcoordinates = cbind(x, y), contact = NULL, inftime = tmp$tau)
   }
- 
+
  # Calling fortran subroutine - Purely Spatial: Susceptible-Infectious-Removed (SIR)
-  if ((type == "SIR") && is.null(contact)) {
+  if ((type == "SIR") & is.null(contact)) {
     tmp <- .Fortran("dataxysir",
                      n = as.integer(n),
                      tmin = as.integer(tmin),
                      tmax = as.integer(tmax),
                      ns = as.integer(ns),
+                     nt = as.integer(nt),
                      ni = as.integer(ni),
-                     alpha = as.numeric(alpha),
-                     beta = as.numeric(beta),
+                     alpha = as.vector(sus.par, mode = "double"),
+                     phi = as.vector(phi, mode = "double"),
+                     beta =as.vector(beta, mode = "double"),
                      spark = as.numeric(spark),
-                     covmat = as.vector(covmat),
-                     lambda = as.integer(infperiod),
-                     x = as.double(x),
-                     y = as.double(y),
-                     tau = as.integer(inftime),
-                     remt = as.integer(remt),
-                     tempseed = as.integer(tempseed)
+                     covmatsus = matrix(as.double(covmat.sus), ncol = ncol(covmat.sus), nrow = n),
+                     covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
+                     lambda = as.vector(infperiod, mode = "integer"),
+                     x = as.vector(x, mode = "double"),
+                     y = as.vector(y, mode = "double"),
+                     tau = as.vector(inftime, mode = "integer"),
+                     remt = as.vector(remt, mode = "integer")
                      )
-                     
-    result1 <- list(inftime = tmp$tau, removaltime = tmp$remt)
+
+    result1 <- list(type = type, XYcoordinates = cbind(x, y), contact = NULL, inftime = tmp$tau, remtime = tmp$remt)
   }
-  
+
   # Calling fortran subroutine - Contact networks: Susceptible-Infectious (SI)
-  if (!is.null(contact)) {
-      if (length(contact)/(n * n) != ni) {
-        stop('epidata:  Dimension of beta  and the number of contact networks are not matching')
-      }
-    network <- array(contact, c(n, n, ni))
-  }
-  if ((type == "SI") && !is.null(contact)) {
+  if ((type == "SI") & !is.null(contact)) {
     tmp <- .Fortran("datacon",
                      n = as.integer(n),
                      tmin = as.integer(tmin),
                      tmax = as.integer(tmax),
                      ns = as.integer(ns),
+                     nt = as.integer(nt),
                      ni = as.integer(ni),
-                     alpha = as.numeric(alpha),
+                     alpha = as.numeric(sus.par),
+                     phi = as.numeric(phi),
                      beta = as.numeric(beta),
                      spark = as.numeric(spark),
-                     covmat = as.vector(covmat),
+                     covmatsus = matrix(as.double(covmat.sus), ncol = ncol(covmat.sus), nrow = n),
+                     covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
                      network = as.vector(network),
-                     tau = as.integer(inftime),
-                     tempseed = as.integer(tempseed)
+                     tau = as.integer(inftime)
                      )
-                     
-    result1 <- list(inftime = tmp$tau)
-  }
- 
+
+    result1 <- list(type = type, XYcoordinates = cbind(x, y), contact = contact, inftime = tmp$tau)
+  } else if ((type == "SIR") & !is.null(contact)) {
  # Calling fortran subroutine - Contact networks: Susceptible-Infectious-Removed (SIR)
-  if ((type == "SIR") && !is.null(contact)) {
     tmp <- .Fortran("dataconsir",
                      n = as.integer(n),
                      tmin = as.integer(tmin),
                      tmax = as.integer(tmax),
-                     n = as.integer(ns),
+                     ns = as.integer(ns),
+                     nt = as.integer(nt),
                      ni = as.integer(ni),
                      lambda = as.integer(infperiod),
-                     alpha = as.numeric(alpha),
+                     alpha = as.numeric(sus.par),
+                     phi = as.numeric(phi),
                      beta = as.numeric(beta),
                      spark = as.numeric(spark),
-                     covmat = as.vector(covmat),
+                     covmatsus = matrix(as.double(covmat.sus), ncol = ncol(covmat.sus), nrow = n),
+                     covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
                      network = as.vector(network),
                      tau = as.integer(inftime),
-                     remt = as.integer(remt),
-                     tempseed = as.integer(tempseed)
+                     remt = as.integer(remt)
                      )
-                    
-    result1 <- list(inftime = tmp$tau, removaltime = tmp$remt)
+
+    result1 <- list(type = type, XYcoordinates = cbind(x, y), contact = contact, inftime = tmp$tau, remtime = tmp$remt)
   }
-  return(result1)
+  class(result1) <- "epidata"
+
+  result1
   # End of function
 }
-
-
-

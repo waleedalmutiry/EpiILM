@@ -1,32 +1,40 @@
 ################################################
-## import name space
-################################################
-import(stats)
-import(graphics)
-import(grDevices)
-import(utils)
-import(coda)
-
-
-
-
-################################################
 ## useDynLib
 ################################################
 
 useDynLib(EpiILM, .registration = TRUE)
 
+################################################
+## import name space
+################################################
+
+import(stats)
+import(graphics)
+importFrom("utils", "head")
+importFrom("utils", "setTxtProgressBar", "txtProgressBar")
+import(coda)
+import(methods)
+importFrom("adaptMCMC", "MCMC")
+import(LaplacesDemon)
 
 ################################################
 ## functions
 ################################################
 
 
-export(	epidata,
-       	epilike,
-       	epimcmc,
-       	epicurve,
-	epispatial,
-        epiBR0,
-        epidic	
-       )
+export(epidata)
+export(as.epidata)
+export(epilike)
+export(epimcmc)
+# export(epiBR0)
+export(epidic)
+export(pred.epi)
+
+################################################
+## S3 methods:
+################################################
+
+S3method(plot, epidata)
+S3method(summary, epimcmc)
+S3method(plot, epimcmc)
+S3method(plot, pred.epi)

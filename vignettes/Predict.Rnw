@@ -1,0 +1,212 @@
+
+\documentclass{article}[11pt]
+\usepackage{Sweave}
+\usepackage{amsmath}
+\addtolength{\textwidth}{1in}
+\addtolength{\oddsidemargin}{-.5in}
+\setlength{\evensidemargin}{\oddsidemargin}
+
+\SweaveOpts{keep.source=TRUE, fig=FALSE}
+% Ross Ihaka suggestions
+\DefineVerbatimEnvironment{Sinput}{Verbatim} {xleftmargin=2em}
+\DefineVerbatimEnvironment{Soutput}{Verbatim}{xleftmargin=2em}
+\DefineVerbatimEnvironment{Scode}{Verbatim}{xleftmargin=2em}
+\fvset{listparameters={\setlength{\topsep}{0pt}}}
+\renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
+
+\SweaveOpts{prefix.string=prediction,width=6,height=4}
+\setkeys{Gin}{width=\textwidth}
+%\VignetteIndexEntry{Posterior Predictive Forecasting and Model Assessment}
+
+
+\title{Posterior Predictive Forecasting and Model Assessment}
+\author{Vineetha Warriyar K. V.,  Waleed Almutiry and Rob Deardon}
+\date{Feb 2020}  
+
+      
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+    \maketitle
+    
+    \section{Posterior Predictive Forecasting}
+    Once we have fitted an ILM to the epidemic data, we can use it to make forecasts related to future epidemic activity. This can be especially useful in the midst of an unfolding epidemic, allowing us to make predictions about how an epidemic is about to unfold by simulating from a model fitted to the data so far observed. We can do this within the context of EpiILM. 
+    
+    In EpiILM package, we define a function \texttt{pred.epi} for getting realizations from the posterior predictive distribution of various epidemiological statistics. Thus, \texttt{pred.epi} can be used for forecasting future epidemic activity among the population.  The output of the function \texttt{pred.epi} is set as an object of class "pred.epi" and it contains a list of objects, some of which are  "criterion'" for the used statistic, "crit.sim'" and "crit.obs" for the statistical results of the simulated and observed epidemic data. For graphical illustration of the predictions we introduce another S3 method plot function, \texttt{plot.pred.epi}. 
+    
+To illustrate this, let's consider modelling the spread of a disease through a series of farms ($n$ = 100) in a region. We assume that we have no individual-level covariates about the animals or farms, other than whether the farms share the same feed supply feed truck. Now we can generate such an undirected contact network as
+<<echo=FALSE, results=tex>>=
+options(continue="  ", width=60)
+options(SweaveHooks=list(fig=function() par(mar=c(3.1, 4.1, 3.1, 1.1))))
+pdf.options(pointsize=8) #text in graph about the same as regular text
+library(EpiILM, quietly=TRUE)
+@
+
+<<echo=TRUE, results=tex>>=
+set.seed(101)
+n <- 100
+contact <- matrix(0, n, n)
+for(i in 1:(n-1)) {
+   contact[i, ((i+1):n)] <- rbinom((n-i), 1, 0.05)
+   contact[((i+1):n), i] <- contact[i, ((i+1):n)]
+}
+@ 
+
+The ILM model for this simulated network data would be
+    \begin{equation}
+    \rm P(i,t) = 1 - \exp\{- \alpha \sum_{j \in I(t)} C_{ij}\}, \hspace{0.1cm} t=1,\dots, t_{max}
+    \label{eq10}
+    \end{equation}
+    
+Setting $t_{max} = 25$ and $\alpha = 0.1$, we can simulate the epidemic from an SI framework via 
+
+<<echo=TRUE, results=tex>>=
+set.seed(101)
+netdat <- epidata( type = "SI", n = 100, tmax = 25,  sus.par = 0.1, 
+                   contact = contact)
+@
+
+Now let's estimate the unknown parameter \texttt{$\alpha$}, assuming we know the infection times and contact network. The R code as follows:
+    
+<<echo=TRUE, fig=FALSE, include=FALSE, results=tex>>=
+t_end <- max(netdat$inftime)
+mcmcout_net <- epimcmc(object = netdat,  tmax = t_end,
+        niter = 50000, sus.par.ini = 0.01,pro.sus.var = 0.01,
+        prior.sus.dist = "uniform", prior.sus.par = c(0, 10000))
+@
+
+The MCMC traceplot for the estimation of the model (\ref{eq10}) parameters is given by 
+<<nettrace, echo=TRUE, fig=TRUE, include=TRUE, results=tex>>=
+plot(mcmcout_net, partype = "parameter", start = 10001, density = FALSE)
+@
+    
+Having fitted our network-based ILM to the epidemic (\texttt{netdat}) in a Bayesian framework, we assume that the epidemic is observed up to time point $t$. Thus, we can simulate forward from time point $t$, conditioning upon the infection pattern already observed in the data. For example, assume we have observed the epidemic until time point 15. i.e., $t = 15$. Using \texttt{pred.epi} we can simulate, say, 500 posterior predictive forecasts from $t = 15$ by setting \texttt{criterion = "newly infectious"}. Following code illustrate the predictions for $t = 15$ and $t = 20$.
+
+<<echo=TRUE, results=tex>>=
+set.seed(1001)
+pred.net.15 <- pred.epi(netdat, xx = mcmcout_net, tmin = 15, 
+                       burnin = 1000, criterion = "newly infectious", 
+                       n.samples = 500)
+pred.net.20 <- pred.epi(netdat, xx = mcmcout_net, tmin = 20, 
+                       burnin = 1000, criterion = "newly infectious", 
+                       n.samples = 500)
+@
+
+To plot the above predicted epidemics from time points 15 and 20 we can use the following code. The observed epidemic curve is presented in solid black colour with average of posterior prediction in solid red and corresponding $95\%$ credible intervals (dotted red) for each starting time point.
+    
+<<t15, echo=TRUE, fig=TRUE, include=TRUE>>=
+plot(pred.net.15, col = "red", lwd = 2, pch = 19)
+@
+    
+  
+<<t20, echo=TRUE, fig=TRUE, include=TRUE>>=
+plot(pred.net.20, col = "red", lwd = 2, pch = 19)
+@
+    
+  \section{Model Selection}
+Another important feature in this package is the techniques that can be used for model assessment. In general, of course, we are not analyzing simulated data, but real data for which we do not know the underlying model. Once we have the posterior distribution of our statistic of interest, we can compare it with observed data  either via a posterior predictive $p$ value or simply graphically.  In infectious disease models, we commonly use some form of epidemic curve  as our (multivariate) statistical interest, e.g., the number of newly infectious  individuals  over time. Other  commonly used statistics are the length of the epidemic or the time of, or prevalence at, the peak of the epidemic. Again, using \texttt{pred.epi} we can obtain the posterior predictive distributions of these statistics for model assessment and the type of the statistic can be specified through the argument \texttt{criterion} with three options: "newly infectious" for the number of newly infectious individuals over time, "epidemic length'' for the length of the epidemic, and "peak time'' for the time of, or prevalence at, the peak of the epidemic. We can also calculate the deviance information criterion (DIC) to compare the fit of different models (\cite{dic}) using the \texttt{epidic} function. The input for this function consists of log-likelihood values of the MCMC output and the log-likelihood under the posterior mean estimates of the parameters.
+    
+We now show how this can be done for the analysis of a simulated spatial epidemic, using the true underlying fitted model. Consider a spatial ILM model
+\begin{equation}
+\rm P(i,t) = 1 - \exp\{-(\alpha_0+\alpha_1 A(i)) \sum_{j \in I(t)}{d_{ij}^{-\beta}}\}, \hspace{0.1cm} t=1,\dots, t_{max}, 
+\label{eq1}
+\end{equation}
+which models the spread of a highly transmissible disease through a series of farms, say $n=100$. In model \ref{eq1}, assume that the susceptibility covariate $A$ represents the number of animals on each farm,  $\alpha_0$ is the baseline susceptibility, $\alpha_1$ is the number of animals effect, and $\beta$ is the spatial parameter. Suppose that the spatial locations of the farms and the number of animals on each farm are known and set  the parameters $(\alpha_0, \alpha_1) = (0.5,0.5)$ and $\beta = 6$. In this situation, it is reasonable to treat the farms themselves as individual units. Also we treat the extent of infection from outside the observed population of farms as unknown ($\varepsilon = 0$) and set $t_{max} = 25$. Considering an SI compartmental framework for this situation, the epidemic is simulated using the following 
+<<echo=TRUE, results=tex>>=
+# simulate spatial locations
+set.seed(101)
+x <- runif(100, 0, 10)
+y <- runif(100, 0, 10)
+# simulate covariate, number of animals on each farm
+A <- round(rexp(100,1/50))
+SI.cov <- epidata(type = "SI", n = 100, tmax = 25, x = x, y = y,
+                 Sformula = ~A, sus.par = c(0.5, 0.5), beta = 6)
+@
+
+We can now refit the generating model to this simulated data and consider the posterior estimates of the model parameters. 
+
+<<tM1, echo=TRUE, fig=TRUE, include=TRUE>>=
+t_end <- max(SI.cov$inftime)
+prior_par <- matrix(rep(1, 4), ncol = 2, nrow = 2)
+mcmcout_M1 <- epimcmc(SI.cov, Sformula = ~A, tmax = t_end, niter = 50000, 
+                      sus.par.ini = c(0.001, 0.001), beta.ini = 0.01, 
+                      pro.sus.var = c(0.08, 0.4), pro.beta.var = 0.5, 
+                      prior.sus.dist = c("gamma","gamma"), 
+                      prior.sus.par = prior_par, 
+                      prior.beta.dist = "uniform", prior.beta.par = c(0, 10000) )
+summary(mcmcout_M1, start = 10001)
+#  MCMC traceplot for the estimation of the model (2) parameters
+plot(mcmcout_M1, partype = "parameter", start = 10001, density = FALSE)
+@
+
+Let's assume we wish to fit a spatial model that does not include the number of animals effect, i.e., a model of the form:
+      \begin{equation}
+    \rm P(i,t) = 1 - \exp\{- \alpha_0 \sum_{j \in I(t)}{d_{ij}^{-\beta}}\}, \hspace{0.1cm} t=1,\dots, 50
+    \label{eq2}
+    \end{equation}
+    
+where $\alpha_0$ is the susceptibility constant and $\beta$ is the spatial parameter.
+To estimate the unknown parameters $\alpha_0$ and $\beta$,  we could again use the function \texttt{epimcmc} 
+      
+<< echo=TRUE, results=tex>>=
+set.seed(101)
+mcmcout_M2 <- epimcmc(SI.cov, tmax = t_end, niter = 50000, sus.par.ini = 0.01, 
+                      beta.ini = 0.01,  pro.sus.var = 0.1, pro.beta.var = 0.5, 
+                      prior.sus.dist = "uniform",
+                      prior.sus.par = c(0, 10000), prior.beta.dist  = "uniform",
+                      prior.beta.par = c(0, 10000))
+@
+The estimate of the posterior mean of the parameters and $95\%$ credible intervals after 10000 iterations of burn-in have been removed are
+<< tM2, echo=TRUE, fig=TRUE, include=TRUE>>=
+summary(mcmcout_M2,  start = 10001)  
+# MCMC traceplot for the estimation of the model (3) parameters
+plot(mcmcout_M2, partype = "parameter", start = 10001, density = FALSE)
+@
+
+For model comaprison let's say, we are interested in the epidemic curve in the form of the number of newly infected individuals over time. First, we will generate 500 posterior predictive epidemics using the MCMC output obtained from model (\ref{eq1}) and (\ref{eq2})
+<<echo=TRUE, results=tex>>=
+set.seed(101)
+pred.model1 <- pred.epi(SI.cov, Sformula = ~A, xx = mcmcout_M1, 
+                    criterion = "newly infectious",  n.samples = 500)
+# convert ILM model (2) into epidata object
+model2.data <- as.epidata(type = "SI", n = 100, x = x, y = y, inftime = SI.cov$inftime)
+pred.model2 <- pred.epi(model2.data, xx = mcmcout_M2, 
+                     criterion = "newly infectious", n.samples = 500)
+@
+
+In order to assess the model fit, we can plot  the posterior predictive realizations, the time-wise 95\% credible intervals, and the true epidemic curve from the above posterior predictions. The observed epidemic curve (solid black) with average of posterior prediction (solid red) and corresponding  $95\%$ credible intervals for model (\ref{eq1}) and (\ref{eq2}) are shown in the following figures. The grey lines are the 500 MCMC samples.
+For model \ref{eq1}
+<<predictM1, echo=TRUE, fig=TRUE, include=TRUE>>=
+plot(pred.model1, col = "red", type = "b", lwd = 2)
+@
+
+and for model \ref{eq2}
+
+<<predictM2, echo=TRUE, fig=TRUE, include=TRUE>>=
+plot(pred.model2, col = "red", type = "b", lwd = 2)
+@
+
+We can see from the above posterior predictive plots that, both the correct model and mis-specified model fare similarly well when considering a comparison of the original epidemic curve and the posterior predictive distribution of said curve, although the posterior uncertainty is greater under the mis-specified model. 
+    
+We can also calculate the deviance information criterion (DIC) to compare the fit of our two models.The following code is used for the model (\ref{eq1}):
+<<echo=TRUE, results=tex>>=
+loglike <- epilike(SI.cov, tmax = t_end, Sformula = ~A, sus.par = c(0.597, 1.071),
+                                         beta = 6.606)
+dic1 <- epidic(burnin = 10000, niter = 50000, LLchain = mcmcout_M1$Loglikelihood,
+                                         LLpostmean = loglike)
+dic1
+@
+
+and the DIC for model (\ref{eq2}) is 
+<<echo=TRUE, results=tex>>=
+loglike <- epilike(model2.data, tmax = t_end,  sus.par = 6.210, beta = 4.942)
+dic2 <- epidic(burnin = 10000, niter = 50000, LLchain = mcmcout_M2$Loglikelihood,
+                                          LLpostmean = loglike)
+@
+
+The noticeably lower DIC value (\Sexpr{round(dic1, 2)}) for model (\ref{eq1}) implies a significantly better fit for the true model (as we would expect). 
+
+\bibliographystyle{plain}
+\bibliography{refer}
+\end{document}
+
+

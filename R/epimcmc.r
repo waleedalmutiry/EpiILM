@@ -2,13 +2,14 @@
 # Part of the R/EpiILM package
 #
 # AUTHORS:
+#         Waleed Almutiry <wkmtierie@qu.edu.sa>,
 #         Vineetha Warriyar. K. V. <vineethawarriyar.kod@ucalgary.ca> and
 #         Rob Deardon <robert.deardon@ucalgary.ca>
 #
 # Based on:
 #                Deardon R, Brooks, S. P., Grenfell, B. T., Keeling, M. J., Tildesley,
-#                M. J., Savill, N. J., Shaw, D. J.,  Woolhouse, M. E. (2010).
-#                Inference for individual level models of infectious diseases in large
+#                M. J., Savill, N. J., Shaw, D. J.,  Woolhouse, M. E. (2010).Inference
+#                for individual level models of infectious diseases in large
 #                populations. Statistica Sinica, 20, 239-261.
 #
 #
@@ -16,463 +17,777 @@
 # a copy of which is available at http://www.r-project.org/Licenses/.
 ################################################################################
 
-epimcmc <- function (type, x = NULL, y = NULL, inftime, tmin = NULL, tmax,
-               infperiod = NULL, niter, alphaini, betaini, sparkini = NULL,
-               Sformula = NULL, contact = NULL, pro.var.a, pro.var.b, pro.var.sp = NULL,
-               prioralpha, halfnorm.var.a = NULL, gamma.par.a = NULL, unif.range.a = NULL,
-               priorbeta, halfnorm.var.b = NULL, gamma.par.b = NULL, unif.range.b = NULL,
-               priorsp = NULL, halfnorm.var.sp = NULL, gamma.par.sp = NULL, unif.range.sp = NULL,
-               tempseed = NULL) {
-  
-  
-  if (is.null(tempseed)) {
-      tempseed <- 0
-  }
- 
- # error checks for input arguments
-  if (is.null(type) || !(type %in% c("SI", "SIR"))) {
-    stop("epimcmc: Specify type as \"SI\" or \"SIR\" ", call. = FALSE)
-  }
-  
-  ns <- length(alphaini)
-  ni <- length(betaini)
-  
-  if (!is.vector(inftime)) {
-    stop('epimcmc: inftime is not a vector')
-  }
-  
-  n <- length(inftime)
-  
-  if (is.null(infperiod) && type == "SIR") {
-    stop(' epimcmc: Specify removal distance, infperiod ')
-  }
-  
-  if (!is.null(infperiod)) {
-      if (length(infperiod) != n) {
-        stop('epimcmc: Length of infperiod is not compatible')
-      }
-      if (type == "SI") {
-        stop('epimcmc: Type must be "SIR"')
-      }
+epimcmc <- function (object, tmin = NULL, tmax, niter,
+            sus.par.ini, trans.par.ini = NULL, beta.ini = NULL, spark.ini = NULL,
+            Sformula = NULL, Tformula = NULL,
+            pro.sus.var, pro.trans.var = NULL, pro.beta.var = NULL, pro.spark.var = NULL,
+            prior.sus.dist, prior.trans.dist = NULL, prior.beta.dist = NULL, prior.spark.dist = NULL,
+            prior.sus.par, prior.trans.par = NULL, prior.beta.par = NULL, prior.spark.par = NULL,
+            adapt = FALSE, acc.rate = NULL) {
+
+  if (class(object) != "epidata") {
+    	stop("The object must be in a class of \"epidata\"", call. = FALSE)
   } else {
-   infperiod <- rep(0, n)
-  }
-  
-  if (is.null(contact) &  (is.null(x) || is.null(y))) {
-      stop('epimcmc: Specify contact network or x, y coordinates')
-  }
-  
-  if (!is.null(x)) {
-      if ((length(y) != n) || (length(x) != n)) {
-        stop('epimcmc: Length of x or y is not compatible ')
+
+    # error checks for input arguments
+
+    if (is.null(object$type) | !(object$type %in% c("SI", "SIR"))) {
+      stop("epimcmc: Specify type as \"SI\" or \"SIR\" ", call. = FALSE)
+    }
+
+    if (!is.vector(object$inftime)) {
+      stop('epimcmc: inftime is not a vector')
+    }
+
+    n <- length(object$inftime)
+
+    if (object$type == "SIR") {
+      infperiod = object$remtime - object$inftime
+    }
+
+    if (is.null(object$contact) &  is.null(object$XYcoordinates)) {
+      stop("epimcmc: Specify contact network or x, y coordinates")
+    }
+
+    if (is.null(tmin)) {
+      tmin <- 1
+    }
+
+
+# susceptibility parameters:
+
+    ns <- length(sus.par.ini)
+
+    # formula for susceptibility function
+    if (!is.null(Sformula)) {
+      covmat.sus <- model.matrix(Sformula)
+      if ((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
+        stop("epimcmc: Check Sformula (no intercept term) and the dimension of susceptibility parameters", call. = FALSE)
+      } else if ((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) {
+        stop("epimcmc: Check Sformula (intercept term) and the dimension of susceptibility parameters", call. = FALSE)
       }
-  }
-  if (is.null(tmin)) {
-    tmin <- 1
-  }
-  if (!is.null(sparkini)) {
-    flag <- 1
-    if (is.null(pro.var.sp)) {
-    stop('epimcmc: Specify proposal variance for spark')
+    } else {
+      if (ns == 1) {
+        covmat.sus <- matrix(1.0, nrow = n, ncol = ns)
+      }
     }
-    if (is.null(priorsp)) {
-        stop('epimcmc: Specify prior for spark')
-    }
-  } else {
-    sparkini <- 0
-    flag     <- 0
-  }
 
-# formula for susceptibility function
-  if (!is.null(Sformula)) {
-    covmat <- model.matrix(Sformula)
-    
-    if ((ncol(covmat) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
-      stop('epimcmc: Check Sformula (no intercept term) and the dimension of alpha')
+    if (is.null(prior.sus.dist) | !(all(prior.sus.dist %in% c("halfnormal", "gamma","uniform")))) {
+      stop("epimcmc: Specify prior for susceptibility parameters as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
     }
-    
-    if ((ncol(covmat) > length(all.vars(Sformula))) & (ns != ncol(covmat))) {
-      stop('epimcmc: Check Sformula (intercept term) and the dimension of alpha')
-    }
-  } else {
+
+    prostda <- vector(mode = "numeric", length = ns)
     if (ns == 1) {
-      covmat <- matrix(1.0, nrow = n, ncol = ns)
+      prostda <- pro.sus.var
+    } else if (ns > 1) {
+      if (length(pro.sus.var) != ns) {
+        stop('epimcmc: Specify proposal variance for each susceptibility parameter')
+      }
+      for (i in 1:ns) {
+        prostda[i] <- pro.sus.var[i]
+      }
     }
-  }
 
-# likelihood selection for SI and SIR
-  if (type == "SI") {
-      tnum <- 1
-  }
-  if (type == "SIR") {
-      tnum <- 2
-  }
-
-# input prior - error check
-  if (is.null(prioralpha) || !(prioralpha %in% c("halfnormal", "gamma","uniform"))) {
-    stop("epimcmc: Specify prior for alpha as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
-  }
-
-  if (is.null(priorbeta) || !(priorbeta %in% c("halfnormal", "gamma","uniform"))) {
-    stop("epimcmc: Specify prior for beta as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
-  }
-  if (!is.null(priorsp)) {
-    if (!(priorsp %in% c("halfnormal", "gamma","uniform"))) {
-        stop("epimcmc: Specify prior for spark term as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
-    }
-  }
-
-  # initialization
-  unifmin <- vector(mode = "numeric", length = ns)
-  unifmax <- vector(mode = "numeric", length = ns)
-  gshape  <- vector(mode = "numeric", length = ns)
-  gscale  <- vector(mode = "numeric", length = ns)
-  halfvar <- vector(mode = "numeric", length = ns)
-
-# prior selection for alpha
-  if (prioralpha == "gamma") {
-    anum <- 1
-    if (ns == 1) {
-        if (is.null(gamma.par.a)) {
-            stop('epimcmc: Specify gamma.par.a')
+    alphapar <- list(NULL)
+    len.alphapar <- ns - sum(prostda == 0)
+    if (len.alphapar != 0){
+      j <- 1
+      for (i in 1:ns) {
+        if (prostda[i] != 0){
+          alphapar[[j]] <- list(NULL)
+          alphapar[[j]][[1]] <- prior.sus.dist[i]
+          j <- j + 1
         } else {
-            gshape <- gamma.par.a[1]
-            gscale <- gamma.par.a[2]
+          j <- j
         }
+      }
+    } else {
+      alphapar[[1]] <- list(NULL)
+      alphapar[[1]][[1]] <- "uniform" # just to fill the list and it is not being used at all.
     }
-    if (ns > 1) {
-        if (is.null(gamma.par.a) ||  !is.matrix(gamma.par.a)) {
-            stop('epimcmc: Specify gamma.par.a as a matrix with each row corresponds to each alpha')
+
+    if (ns == 1 & len.alphapar != 0) {
+      if ((prior.sus.dist == "gamma") | (prior.sus.dist == "uniform")) {
+        if (is.null(prior.sus.par)) {
+          stop('epimcmc: Specify prior.sus.par as a vector or a 1 by 2 matrix.')
         } else {
-            for (i in 1:ns) {
-                gshape[i] <- gamma.par.a[i,1]
-               gscale[i] <- gamma.par.a[i,2]
-            }
+          alphapar[[1]][[2]] <- vector()
+          alphapar[[1]][[2]][1] <- prior.sus.par[1]
+          alphapar[[1]][[2]][2] <- prior.sus.par[2]
         }
-    }
-  # end if - gamma prior
-  }
-  
-  if (prioralpha == "halfnormal") {
-    anum <- 2
-    if (ns == 1) {
-        if (is.null(halfnorm.var.a)) {
-            stop('epimcmc: Specify halfnorm.var.a ')
+      } else if (prior.sus.dist == "halfnormal") {
+        if (is.null(prior.sus.par)) {
+          stop('epimcmc: Specify the variance of the half normal prior distribution for prior.sus.par.')
         } else {
-            halfvar <- halfnorm.var.a
+          alphapar[[1]][[2]] <- vector()
+          alphapar[[1]][[2]][1] <- prior.sus.par[1]
+          alphapar[[1]][[2]][2] <- 0
         }
-    }
-    if (ns > 1) {
-        if (is.null(halfnorm.var.a) || length(halfnorm.var.a) != ns) {
-            stop('epimcmc: Specify halfnorm.var.a as a vector' )
-        } else {
-          for (i in 1:ns) {
-            halfvar[i] <- halfnorm.var.a[i]
+      }
+    } else if (ns == 1 & len.alphapar == 0){
+      alphapar[[1]][[2]] <- vector()
+      alphapar[[1]][[2]][1] <- 0
+      alphapar[[1]][[2]][2] <- 0
+    } else if (ns > 1 & len.alphapar != 0) {
+      if (is.null(prior.sus.par) |  !is.matrix(prior.sus.par)) {
+        stop('epimcmc: Specify prior.sus.par as a matrix with each row corresponds to each susceptibility parameter')
+      } else {
+        j <- 1
+        for (i in 1:ns) {
+          if (prostda[i] != 0){
+            alphapar[[j]][[2]] <- vector()
+            alphapar[[j]][[2]][1] <- prior.sus.par[i,1]
+            alphapar[[j]][[2]][2] <- prior.sus.par[i,2]
+            j <- j + 1
+          } else {
+            j <- j
           }
         }
-    }
-  # end if - half normal prior
-  }
+      }
+    } else if (ns > 1 & len.alphapar == 0) {
+      alphapar[[1]][[2]] <- vector()
+      alphapar[[1]][[2]][1] <- 0
+      alphapar[[1]][[2]][2] <- 0
+    }# end if - ns
 
-if (prioralpha == "uniform") {
-    anum <- 3
-    if (ns == 1) {
-        if (is.null(unif.range.a)) {
-            stop('epimcmc: Specify unif.range.a ')
-        } else {
-           unifmin <- unif.range.a[1]
-           unifmax <- unif.range.a[2]
-        }
+# transmissibility parameters:
+
+    if (!is.null(trans.par.ini)) {
+      nt <- length(trans.par.ini)
+      flag.trans <- 1
+    } else {
+      nt <- 1
+      flag.trans <- 0
+      phipar <- 1
     }
-    if (ns > 1) {
-        if (is.null(unif.range.a) || !is.matrix(unif.range.a)) {
-            stop('epimcmc: Specify unif.range.a as a matrix with each row corresponds to each alpha')
+
+    # formula for transmissibility function
+    if (flag.trans == 1) {
+      if (is.null(Tformula)) {
+        stop("epimcmc: Tformula is missing. It has to be specified with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
+      } else if (!is.null(Tformula)) {
+        covmat.trans <- model.matrix(Tformula)
+        if ((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) {
+          stop("epimcmc: Check Tformula. It has to be with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
+        }
+      }
+    } else if (flag.trans == 0) {
+      covmat.trans <- matrix(1.0, nrow = n, ncol = nt)
+    }
+
+    if (!is.null(prior.trans.dist) & !(all(prior.trans.dist %in% c("halfnormal", "gamma","uniform")))) {
+      stop("epimcmc: Specify prior for transmissibility parameters as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
+    }
+
+    if (is.null(prior.trans.dist) & flag.trans == 1) {
+      stop("epimcmc: Specify prior for transmissibility parameters as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
+    }
+
+    # proposal variance for transmissibility parameters
+    prostdt <- vector(mode = "numeric", length = nt)
+    if (flag.trans == 1 & nt == 1) {
+      if (is.null(pro.trans.var)) {
+        stop('epimcmc: Specify proposal variance for the transmissibility parameter')
+      }
+      prostdt <- pro.trans.var
+    } else if (flag.trans == 1 & nt > 1) {
+      if (is.null(pro.trans.var)) {
+        stop('epimcmc: Specify proposal variance for each transmissibility parameter')
+      }
+      if (length(pro.trans.var) != nt) {
+        stop('epimcmc: Specify proposal variance for each transmissibility parameter')
+      }
+      for (i in 1:nt) {
+        prostdt[i] <- pro.trans.var[i]
+      }
+    } else {
+      prostdt <- NULL
+    }
+
+    if (flag.trans == 1){
+      phipar <- list(NULL)
+      len.phipar <- nt - sum(prostdt == 0)
+      if (len.phipar != 0){
+        j <- 1
+        for (i in 1:nt) {
+          if (prostdt[i] != 0){
+            phipar[[j]] <- list(NULL)
+            phipar[[j]][[1]] <- prior.trans.dist[i]
+            j <- j + 1
+          } else {
+            j <- j
+          }
+        }
+      } else {
+        phipar[[1]] <- list(NULL)
+        phipar[[1]][[1]] <- "uniform" # just to fill the list and it is not being used at all.
+      }
+    } else {
+      phipar <- 1
+    }
+
+    # prior selection for transmissibility parameters
+    if (flag.trans == 1) {
+
+      if (nt == 1 & len.phipar != 0) {
+        if ((prior.trans.dist == "gamma") | (prior.trans.dist == "uniform")) {
+          if (is.null(prior.trans.par)) {
+            stop('epimcmc: Specify prior.trans.par as a vector or a 1 by 2 matrix.')
+          } else {
+            phipar[[1]][[2]] <- vector()
+            phipar[[1]][[2]][1] <- prior.trans.par[1]
+            phipar[[1]][[2]][2] <- prior.trans.par[2]
+          }
+        } else if (prior.trans.dist == "halfnormal") {
+          if (is.null(prior.trans.par)) {
+            stop('epimcmc: Specify the variance of the half normal prior distribution for prior.trans.par.')
+          } else {
+            phipar[[1]][[2]] <- vector()
+            phipar[[1]][[2]][1] <- prior.trans.par[1]
+            phipar[[1]][[2]][2] <- 0
+          }
+        }
+      } else if (nt == 1 & len.phipar == 0){
+        phipar[[1]][[2]] <- vector()
+        phipar[[1]][[2]][1] <- 0
+        phipar[[1]][[2]][2] <- 0
+      } else if (nt > 1 & len.phipar != 0) {
+        if (is.null(prior.trans.par) |  !is.matrix(prior.trans.par)) {
+          stop('epimcmc: Specify prior.trans.par as a matrix with each row corresponds to each transmissibility parameter')
         } else {
-            for (i in 1:ns) {
-                unifmin[i] <- unif.range.a[i,1]
-                unifmax[i] <- unif.range.a[i,2]
+          j <- 1
+          for (i in 1:nt) {
+            if (prostdt[i] != 0){
+              phipar[[j]][[2]] <- vector()
+              phipar[[j]][[2]][1] <- prior.trans.par[i,1]
+              phipar[[j]][[2]][2] <- prior.trans.par[i,2]
+              j <- j + 1
+            } else {
+              j <- j
             }
+          }
         }
-    }
-  # end if - uniform prior
-  }
+      } else if (nt > 1 & len.phipar == 0) {
+        phipar[[1]][[2]] <- vector()
+        phipar[[1]][[2]][1] <- 0
+        phipar[[1]][[2]][2] <- 0
+      }# end if - nt
+    }# end if - flag.trans
 
-  # initialization
-  unifminb <- vector(mode = "numeric", length = ni)
-  unifmaxb <- vector(mode = "numeric", length = ni)
-  gshapeb  <- vector(mode = "numeric", length = ni)
-  gscaleb  <- vector(mode = "numeric", length = ni)
-  halfvarb <- vector(mode = "numeric", length = ni)
+# BETA:
 
-# prior selection for beta
-if (priorbeta == "gamma") {
-    bnum <- 1
-    if (ni == 1) {
-        if (is.null(gamma.par.b)) {
-            stop('epimcmc: Specify gamma.par.b ')
-        } else {
-            gshapeb <- gamma.par.b[1]
-            gscaleb <- gamma.par.b[2]
-        }
-    }
-    if (ni > 1) {
-        if (is.null(gamma.par.b) || !is.matrix(gamma.par.b)) {
-            stop('epimcmc: Specify gamma.par.b as a matrix with each row corresponds to each beta')
-        } else {
-            for (i in 1:ni) {
-                gshapeb[i] <- gamma.par.b[i,1]
-                gscaleb[i] <- gamma.par.b[i,2]
-            }
-        }
-    }
-  # end if - gamma prior
-  }
+    if (!is.null(object$contact)) {
+       if (length(object$contact)/(n * n) == 1) {
+         ni <- 1
 
-if  (priorbeta == "halfnormal") {
-    bnum <- 2
-    if (ni == 1) {
-        if (is.null(halfnorm.var.b)) {
-            stop('epimcmc: Specify halfnorm.var.b ')
-        } else {
-            halfvarb <- halfnorm.var.b
-        }
-    }
-    if (ni > 1) {
-        if (is.null(halfnorm.var.b) || length(halfnorm.var.b) != ni) {
-            stop('epimcmc: Specify halfnorm.var.b as a vector' )
-        } else {
-            for (i in 1:ni) {
-                halfvarb[i] <- halfnorm.var.b[i]
-            }
-        }
-    }
-  # end id - half normal prior
-  }
-
-if (priorbeta == "uniform") {
-    bnum <- 3
-    if (ni == 1) {
-        if (is.null(unif.range.b)) {
-            stop('epimcmc: Specify unif.range.b ')
-        } else {
-            unifminb <- unif.range.b[1]
-            unifmaxb <- unif.range.b[2]
-        }
-    }
-    if (ni > 1) {
-        if (is.null(unif.range.b) || !is.matrix(unif.range.b)) {
-            stop('epimcmc: Specify unif.range.b as a matrix with each row corresponds to each beta')
-        } else {
-            for (i in 1:ni) {
-                unifminb[i] <- unif.range.b[i,1]
-                unifmaxb[i] <- unif.range.b[i,2]
-            }
-        }
-    }
-  # end if - uniform prior
-  }
-
-  # initializations
-  unifminsp <- 0.0
-  unifmaxsp <- 0.0
-  gshapesp  <- 0.0
-  gscalesp  <- 0.0
-  halfvarsp <- 0.0
-
-# Prior selection for spark if it exist in the model
-  if (!is.null(priorsp)) {
-    if (priorsp == "gamma") {
-     snum <- 1
-         if (is.null(gamma.par.sp)) {
-             stop('epimcmc: Specify gamma.par.sp ')
-         } else {
-             gshapesp <- gamma.par.sp[1]
-             gscalesp <- gamma.par.sp[2]
+         if (!is.null(beta.ini) | !is.null(prior.beta.dist) | !is.null(pro.beta.var) | !is.null(prior.beta.par)) {
+          stop("As the model has only one contact network, The model does not have a network parameter beta, beta.ini, prior.dist.beta, prior.beta.var, and pro.beta.var must be assigned to their default values = NULL", .call = FALSE)
          }
-    }
-   if (priorsp == "halfnormal") {
-     snum <- 2
-     if (is.null(halfnorm.var.sp)) {
-         stop('epimcmc: Specify halfnorm.var.sp ')
-     } else {
-        halfvarsp <- halfnorm.var.sp
-     }
-   }
-   if (priorsp == "uniform") {
-     snum <- 3
-     if (is.null(unif.range.sp)) {
-         stop('epimcmc: Specify unif.range.sp ')
-     } else {
-         unifminsp <- unif.range.sp[1]
-         unifmaxsp <- unif.range.sp[2]
-     }
-   }
-  } else {
-     snum <- 0
-  }
 
-# proposal variance for alpha
-  prostda <- vector(mode = "numeric", length = ns)
-  if (ns == 1) {
-    prostda <- sqrt(pro.var.a)
-  }
-  if (ns > 1) {
-      if (length(pro.var.a) != ns) {
-        stop('epimcmc: Specify proposal variance for each alpha parameter')
+         flag.beta <- 0
+
+         betapar <- list(NULL)
+         betapar[[1]] <- "uniform" # just to fill the list and it is not being used at all.
+         betapar[[2]] <- vector()
+         betapar[[2]][1] <- 0
+         betapar[[2]][2] <- 0
+
+       } else if (length(object$contact)/(n * n) > 1) {
+
+        if (is.null(beta.ini)) {
+          stop("epimcmc: The initial values beta.ini of the network parameters has to specified", call. = FALSE)
+        }
+         ni <- length(beta.ini)
+
+         if (length(object$contact)/(n * n) != ni) {
+             stop('epimcmc:  Dimension of beta  and the number of contact networks are not matching')
+         }
+
+         flag.beta <- 1
+
+         if (is.null(prior.beta.dist) | !(all(prior.beta.dist %in% c("halfnormal", "gamma","uniform")))) {
+           stop("epimcmc: Specify prior for beta as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
+         }
+
+
+         if (length(prior.beta.dist) != ni) {
+           stop('epimcmc: Specify prior distributions for each of the network parameters beta, prior.beta.dist')
+         }
+
+         # proposal variance for  beta
+         prostdb <- vector(mode = "numeric", length = ni)
+         if (length(pro.beta.var) != ni) {
+           stop('epimcmc: Specify proposal variance for each beta parameter')
+         }
+         for (i in 1:ni) {
+           prostdb[i] <- pro.beta.var[i]
+         }
+
+
+         betapar <- list(NULL)
+         if (flag.beta == 0) {
+           len.betapar <- 0
+         } else {
+           len.betapar <- ni - sum(prostdb == 0)
+         }
+
+         if (len.betapar != 0){
+           j <- 1
+           for (i in 1:ni) {
+             if (prostdb[i] != 0){
+               betapar[[j]] <- list(NULL)
+               betapar[[j]][[1]] <- prior.beta.dist[i]
+               j <- j + 1
+             } else {
+               j <- j
+             }
+           }
+         } else {
+           betapar[[1]] <- list(NULL)
+           betapar[[1]][[1]] <- "uniform" # just to fill the list and it is not being used at all.
+         }
+         # prior selection for kernel parameters
+         if (len.betapar != 0) {
+           if (is.null(prior.beta.par) |  !is.matrix(prior.beta.par)) {
+             stop('epimcmc: Specify prior.beta.par as a matrix with each row corresponds to each beta parameter')
+           } else {
+             j <- 1
+             for (i in 1:ni) {
+               if (prostdb[i] != 0){
+                 betapar[[j]][[2]] <- vector()
+                 betapar[[j]][[2]][1] <- prior.beta.par[i,1]
+                 betapar[[j]][[2]][2] <- prior.beta.par[i,2]
+                 j <- j + 1
+               } else {
+                 j <- j
+               }
+             }
+           }
+         } else if (len.betapar == 0) {
+           betapar[[1]][[2]] <- vector()
+           betapar[[1]][[2]][1] <- 0
+           betapar[[1]][[2]][2] <- 0
+         }# end if - ni
+        }
+
+    } else if (is.null(object$contact)) {
+
+        if (is.null(object$XYcoordinates)) {
+          stop("epimcmc: Specify contact network or x, y coordinates")
+        }
+
+        ni <- length(beta.ini)
+
+        if (ni > 1) {
+          stop("epimcmc: The input of beta.ini has more than one value while the considered distance-based ILM needs only one spatial parameter, beta.")
+        }
+
+        if (is.null(prior.beta.dist) | !(all(prior.beta.dist %in% c("halfnormal", "gamma","uniform")))) {
+          stop("epimcmc: Specify prior for beta as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
+        }
+
+        if (length(pro.beta.var) != ni) {
+          stop('epimcmc: Specify only one proposal variance for the spatial parameter beta, pro.beta.var')
+        }
+
+        if (length(prior.beta.dist) != ni) {
+          stop('epimcmc: Specify only one prior distribution for the spatial parameter beta, prior.beta.dist')
+        }
+
+        flag.beta <- 1
+
+        prostdb <- pro.beta.var
+
+        betapar <- list(NULL)
+        len.betapar <- ni - sum(prostdb == 0)
+        betapar[[1]] <- list(NULL)
+        if (len.betapar != 0){
+          betapar[[1]][[1]] <- prior.beta.dist
+        } else {
+          betapar[[1]][[1]] <- "uniform" # just to fill the list and it is not being used at all.
+        }
+        # prior selection for kernel parameters
+        if (len.betapar != 0) {
+          if ((prior.beta.dist == "gamma") | (prior.beta.dist == "uniform")) {
+            if (is.null(prior.beta.par)) {
+              stop('epimcmc: Specify prior.beta.par as a vector or a 1 by 2 matrix.')
+            } else {
+              betapar[[1]][[2]] <- vector()
+              betapar[[1]][[2]][1] <- prior.beta.par[1]
+              betapar[[1]][[2]][2] <- prior.beta.par[2]
+            }
+          } else if (prior.beta.dist == "halfnormal") {
+            if (is.null(prior.beta.par)) {
+              stop('epimcmc: Specify the variance of the half normal prior distribution for prior.beta.par.')
+            } else {
+              betapar[[1]][[2]] <- vector()
+              betapar[[1]][[2]][1] <- prior.beta.par[1]
+              betapar[[1]][[2]][2] <- 0
+            }
+          }
+
+        } else if (len.betapar == 0){
+          betapar[[1]][[2]] <- vector()
+          betapar[[1]][[2]][1] <- 0
+          betapar[[1]][[2]][2] <- 0
+        }
+    }
+
+# SPARK parameter:
+
+    if (!is.null(spark.ini)) {
+      flag <- 1
+      if (is.null(pro.spark.var)) {
+        stop("epimcmc: Specify proposal variance for spark", call. = FALSE)
       }
+      if (is.null(prior.spark.dist)) {
+        stop("epimcmc22: Specify prior for spark", call. = FALSE)
+      }
+      if (!is.null(prior.spark.dist) | !(prior.spark.dist %in% c("halfnormal", "gamma","uniform"))) {
+        stop("epimcmc2: Specify prior for spark term as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
+      }
+      sparkpar <- list(NULL)
+      length(sparkpar) <- 2
+      sparkpar[[1]] <- prior.spark.dist
+      if ((prior.spark.dist == "gamma") | (prior.spark.dist == "uniform")) {
+        if (is.null(prior.spark.par)) {
+          stop('epimcmc: Specify prior.spark.par as a vector or a 1 by 2 matrix.')
+        } else {
+          sparkpar[[1]][[2]] <- vector()
+          sparkpar[[1]][[2]][1] <- prior.spark.par[1]
+          sparkpar[[1]][[2]][2] <- prior.spark.par[2]
+        }
+      } else if (prior.spark.dist == "halfnormal") {
+        if (is.null(prior.spark.par)) {
+          stop('epimcmc: Specify the variance of the half normal prior distribution for prior.spark.par.')
+        } else {
+          sparkpar[[1]][[2]] <- vector()
+          sparkpar[[1]][[2]][1] <- prior.spark.par[1]
+          sparkpar[[1]][[2]][2] <- 0
+        }
+      }
+
+    } else if (is.null(spark.ini)) {
+      flag <-  0
+      sparkpar <- list(NULL)
+      sparkpar[[2]] <- vector()
+      sparkpar[[2]][1] <- 0
+      sparkpar[[2]][2] <- 0
+    }
+
+    # proposal variance for  spark
+
+    if (flag == 1) {
+      prostdsp <- pro.spark.var
+    } else {
+      prostdsp <- 0.0
+    }
+
+
+
+    if (flag == 0 & flag.trans == 0 & flag.beta == 0) {
+      mcmcscale <- c(prostda)
+    } else if (flag == 0 & flag.trans == 0 & flag.beta == 1) {
+      mcmcscale <- c(prostda, prostdb)
+    } else if (flag == 0 & flag.trans == 1 & flag.beta == 0) {
+      mcmcscale <- c(prostda, prostdt)
+    } else if (flag == 0 & flag.trans == 1 & flag.beta == 1) {
+      mcmcscale <- c(prostda, prostdt, prostdb)
+    } else if (flag == 1 & flag.trans == 0 & flag.beta == 0) {
+      mcmcscale <- c(prostda, prostdsp)
+    } else if (flag == 1 & flag.trans == 0 & flag.beta == 1) {
+      mcmcscale <- c(prostda, prostdb, prostdsp)
+    } else if (flag == 1 & flag.trans == 1 & flag.beta == 0) {
+      mcmcscale <- c(prostda, prostdt, prostdsp)
+    } else if (flag == 1 & flag.trans == 1 & flag.beta == 1) {
+      mcmcscale <- c(prostda, prostdt, prostdb, prostdsp)
+    }
+
+    scalemc <- mcmcscale[mcmcscale !=0]
+
+
+    if (flag == 0 & flag.trans == 0 & flag.beta == 0) {
+      mcmcinit <- c(sus.par.ini)
+    } else if (flag == 0 & flag.trans == 0 & flag.beta == 1) {
+      mcmcinit <- c(sus.par.ini, beta.ini)
+    } else if (flag == 0 & flag.trans == 1 & flag.beta == 0) {
+      mcmcinit <- c(sus.par.ini, trans.par.ini)
+    } else if (flag == 0 & flag.trans == 1 & flag.beta == 1) {
+      mcmcinit <- c(sus.par.ini, trans.par.ini, beta.ini)
+    } else if (flag == 1 & flag.trans == 0 & flag.beta == 0) {
+      mcmcinit <- c(sus.par.ini, spark.ini)
+    } else if (flag == 1 & flag.trans == 0 & flag.beta == 1) {
+      mcmcinit <- c(sus.par.ini, beta.ini, spark.ini)
+    } else if (flag == 1 & flag.trans == 1 & flag.beta == 0) {
+      mcmcinit <- c(sus.par.ini, trans.par.ini, spark.ini)
+    } else if (flag == 1 & flag.trans == 1 & flag.beta == 1) {
+      mcmcinit <- c(sus.par.ini, trans.par.ini, beta.ini, spark.ini)
+    }
+
+
+    initmc <- mcmcinit[mcmcscale!=0]
+
+    p <- function(xx) {
+
+      ms <- which(mcmcscale[1: ns] == 0)
+      nns <- ns - length(ms)
+      if (length(ms) != 0) {
+        xs <- vector("double", length = ns)
+        xs[ms] <- mcmcinit[ms]
+        xs[-ms] <- xx[1: nns]
+      } else {
+        xs <- xx[1: nns]
+      }
+
+      if (flag.trans == 1) {
+        mt <- which(mcmcscale[(1+ns): (ns+nt)] == 0)
+        nnt <- nt - length(mt)
+        if (length(mt) != 0) {
+          xt <- vector("double", length = nt)
+          xt[mt] <- mcmcinit[mt+ns]
+          xt[-mt] <- xx[(1+nns): (nns+nnt)]
+        } else {
+          xt <- xx[(1+nns): (nns+nnt)]
+        }
+      } else {
+        nnt <- 0
+        xt <- NULL
+      }
+
+      if (flag.beta == 1) {
+        if (flag.trans == 1) {
+          mi <- which(mcmcscale[(1+ns+nt): (ns+nt+ni)] == 0)
+        } else {
+          mi <- which(mcmcscale[(1+ns): (ns+ni)] == 0)
+        }
+        nni <- ni - length(mi)
+
+        if (flag.trans == 1) {
+          if (length(mi) != 0) {
+            xi <- vector("double", length = ni)
+            xi[mi] <- mcmcinit[mi+ns+nt]
+            xi[-mi] <- xx[(1+nns+nnt): (nns+nnt+nni)]
+          } else {
+            xi <- xx[(1+nns+nnt): (nns+nnt+nni)]
+          }
+        } else {
+          if (length(mi) != 0) {
+            xi <- vector("double", length = ni)
+            xi[mi] <- mcmcinit[mi+ns+nnt]
+            xi[-mi] <- xx[(1+nns+nnt): (nns+nnt+nni)]
+          } else {
+            xi <- xx[(1+nns+nnt): (nns+nnt+nni)]
+          }
+        }
+      } else {
+        nni <- 0
+        xi <- NULL
+      }
+
+      if (flag == 1) {
+        if(length(xx) < nns+nnt+nni) {
+          xsp <- xx[nns+nnt+nni+1]
+        } else if (length(xx) == nns+nnt+nni & mcmcscale[ns+nt+ni+1] == 0) {
+          xsp <- mcmcinit[ns+nt+ni+1]
+        }
+      } else {
+        xsp <- NULL
+      }
+
+
+      loglikeILM <- epilike(object = object, tmin = tmin, tmax = tmax, sus.par = xs,
+                            trans.par = xt, beta = xi, spark = xsp, Sformula = Sformula, Tformula = Tformula)
+
+      if (nns != 0) {
+        palpha = 0
+        for (i in 1:nns) {
+          if (alphapar[[i]][[1]] == "uniform") {
+            palpha <- palpha + dunif(xx[i], min = alphapar[[i]][[2]][1],
+                                     max = alphapar[[i]][[2]][2], log = TRUE)
+          } else if (alphapar[[i]][[1]] == "gamma") {
+            palpha <- palpha + dgamma(xx[i], shape = alphapar[[i]][[2]][1],
+                                      rate = alphapar[[i]][[2]][2], log = TRUE)
+          } else if (alphapar[[i]][[1]] == "halfnormal") {
+            palpha <- palpha + dhalfnorm(xx[i], scale = alphapar[[i]][[2]][1], log = TRUE)
+          }
+        }
+      } else {
+        palpha = 0
+      }
+
+      if (flag.trans == 1 & nnt != 0) {
+        pphi = 0
+        for (i in 1:nnt) {
+          if (phipar[[i]][[1]] == "uniform") {
+            pphi <- pphi + dunif(xx[i+nns], min = phipar[[i]][[2]][1],
+                                 max = phipar[[i]][[2]][2], log = TRUE)
+          } else if (phipar[[i]][[1]] == "gamma") {
+            pphi <- pphi + dgamma(xx[i+nns], shape = phipar[[i]][[2]][1],
+                                  rate = phipar[[i]][[2]][2], log = TRUE)
+          } else if (phipar[[i]][[1]] == "halfnormal") {
+            pphi <- pphi + dhalfnorm(xx[i+nns], scale = phipar[[i]][[2]][1], log = TRUE)
+          }
+        }
+      } else {
+        pphi = 0
+      }
+
+      if (nni != 0) {
+        pbeta = 0
+        for (i in 1:nni) {
+          if (betapar[[i]][[1]] == "uniform") {
+            pbeta <- pbeta + dunif(xx[i+nns+nnt], min = betapar[[i]][[2]][1],
+                                   max = betapar[[i]][[2]][2], log = TRUE)
+          } else if (betapar[[i]][[1]] == "gamma") {
+            pbeta <- pbeta + dgamma(xx[i+nns+nnt], shape = betapar[[i]][[2]][1],
+                                    rate = betapar[[i]][[2]][2], log = TRUE)
+          } else if (betapar[[i]][[1]] == "halfnormal") {
+            pbeta <- pbeta + dhalfnorm(xx[i+nns+nnt], scale = betapar[[i]][[2]][1], log = TRUE)
+          }
+        }
+      } else {
+        pbeta = 0
+      }
+
+
+      if (flag == 1) {
+        if (sparkpar[[1]] == "uniform") {
+          pspark <- dunif(xx[nns+nnt+nni+1], min = sparkpar[[2]][1],
+                          max = sparkpar[[2]][2], log = TRUE)
+        } else if (sparkpar[[1]] == "gamma") {
+          pspark <- dgamma(xx[nns+nnt+nni+1], shape = sparkpar[[2]][1],
+                           rate = sparkpar[[2]][2], log = TRUE)
+        } else if (sparkpar[[1]] == "halfnormal") {
+          pspark <- pspark + dhalfnorm(xx[nns+nnt+nni+1], scale = sparkpar[[2]][1], log = TRUE)
+        }
+      } else {
+        pspark = 0.0
+      }
+
+      return(loglikeILM + palpha + pphi + pbeta + pspark)
+    }
+
+    if (is.null(object$contact)) {
+        kernel.type <- "distance-based discrete-time ILM"
+        result <- MCMC(p = p, n = niter, init = initmc, scale = scalemc,
+        adapt = adapt, acc.rate = acc.rate)
+    } else if (!is.null(object$contact)) {
+        kernel.type <- "network-based discrete-time ILM"
+        result <- MCMC(p = p, n = niter, init = initmc, scale = scalemc,
+        adapt = adapt, acc.rate = acc.rate)
+    }
+
+    alphanames <- c()
     for (i in 1:ns) {
-            prostda[i] <- sqrt(pro.var.a[i])
-        }
-  }
+        alphanames <- c(alphanames, paste("alpha.", i, sep = ""))
+    }
 
-# proposal variance for  beta
-  prostdb <- vector(mode = "numeric", length = ni)
-  if (ni == 1) {
-    prostdb <- sqrt(pro.var.b)
-  }
-  if (ni > 1) {
-      if (length(pro.var.b) != ni) {
-        stop('epimcmc: Specify proposal variance for each beta parameter')
+    if (flag.trans == 1) {
+        phinames <- c()
+        for (i in 1:nt) {
+            phinames <- c(phinames, paste("phi.", i, sep = ""))
+        }
+    }
+
+    if (flag.beta == 1) {
+      betanames <- c()
+      for (i in 1:ni) {
+          betanames <- c(betanames, paste("beta.", i, sep = ""))
       }
-    for (i in 1:ni) {
-            prostdb[i] <- sqrt(pro.var.b[i])
-        }
-  }
+    }
 
-# proposal variance for  spark
-  if (!is.null(pro.var.sp)) {
-    prostdsp <- sqrt(pro.var.sp)
-  } else {
-     prostdsp <- 0.0
-  }
- 
- # Calling fortran subroutine for Purely Spatial models
-  if (is.null(contact)) {
-    tmp <- .Fortran("mcmc",
-                     tnum = as.integer(tnum),
-                     x = as.numeric(x),
-                     y = as.numeric(y),
-                     tau = as.integer(inftime),
-                     n = as.integer(n),
-                     lambda = as.integer(infperiod),
-                     tmin = as.integer(tmin),
-                     tmax = as.integer(tmax),
-                     nsim = as.integer(niter),
-                     aalpha = as.numeric(alphaini),
-                     ns = as.integer(ns),
-                     ni = as.integer(ni),
-                     bbeta = as.double(betaini),
-                     covmat = as.vector(covmat),
-                     prostda = as.double(prostda),
-                     prostdb = as.double(prostdb),
-                     anum = as.integer(anum),
-                     bnum = as.integer(bnum),
-                     halfvar = as.double(halfvar),
-                     unifmin = as.double(unifmin),
-                     unifmax = as.double(unifmax),
-                     gshape = as.double(gshape),
-                     gscale = as.double(gscale),
-                     halfvarb = as.double(halfvarb),
-                     unifminb = as.double(unifminb),
-                     unifmaxb = as.double(unifmaxb),
-                     gshapeb = as.double(gshapeb),
-                     gscaleb = as.double(gscaleb),
-                     simalpha = matrix(0, nrow = niter, ncol = ns),
-                     simbeta = matrix(0, nrow = niter, ncol = ni),
-                     sspark = as.numeric(sparkini),
-                     flag = as.integer(flag),
-                     prostdsp = as.double(prostdsp),
-                     snum = as.integer(snum),
-                     halfvarsp = as.double(halfvarsp),
-                     unifminsp = as.double(unifminsp),
-                     unifmaxsp = as.double(unifmaxsp),
-                     gshapesp = as.double(gshapesp),
-                     gscalesp = as.double(gscalesp),
-                     simspark = as.double(rep(0,niter)),
-                     llikeval = as.double(rep(0,niter)),
-                     tempseed = as.integer(tempseed))
-                     
-    if (flag == 0) {
-        result        <- data.frame(ALPHA = tmp$simalpha, BETA = tmp$simbeta)
-        Loglikelihood <- tmp$llikeval
-    } else {
-      result        <- data.frame(ALPHA = tmp$simalpha, BETA = tmp$simbeta, SPARK = tmp$simspark)
-      Loglikelihood <- tmp$llikeval
+    if (flag == 0 & flag.trans == 0 & flag.beta == 0) {
+        nnames <- c(alphanames)
+    } else if (flag == 0 & flag.trans == 0 & flag.beta == 1) {
+        nnames <- c(alphanames, betanames)
+    } else if (flag == 1 & flag.trans == 0 & flag.beta == 0) {
+        nnames <- c(alphanames, "spark")
+    } else if (flag == 1 & flag.trans == 0 & flag.beta == 1) {
+        nnames <- c(alphanames, betanames, "spark")
+    } else if (flag == 0 & flag.trans == 1 & flag.beta == 0) {
+        nnames <- c(alphanames, phinames)
+    } else if (flag == 0 & flag.trans == 1 & flag.beta == 1) {
+        nnames <- c(alphanames, phinames, betanames)
+    } else if (flag == 1 & flag.trans == 1 & flag.beta == 0) {
+        nnames <- c(alphanames, phinames, "spark")
+    } else if (flag == 1 & flag.trans == 1 & flag.beta == 1) {
+        nnames <- c(alphanames, phinames, betanames, "spark")
+    }
+
+    finalnames <- nnames[mcmcscale!=0]
+
+  	Estimates <- data.frame(result$samples)
+  	colnames(Estimates) <- finalnames
+
+  	Loglikelihood <- c(result$log.p)
+#  	colnames(Loglikelihood) <- "Loglikelihood"
+
+    ki <- match(nnames,finalnames)
+
+    nki <- which(nnames %in% finalnames)
+
+    fullsamples <- matrix(0, ncol = length(nnames), nrow = niter)
+    fullsamples[,nki] <- result$samples
+    nnki <- which(is.na(ki))
+
+    if (length(nnki) == 1) {
+      fullsamples[,nnki] <- rep(mcmcinit[nnki], niter)
+    } else if (length(nnki) > 1){
+      for (i in 1:length(nnki)) {
+        fullsamples[,nnki[i]] <- rep(mcmcinit[nnki[i]], niter)
+      }
     }
   }
 
-# Calling fortran subroutines for contact network models
-  if (!is.null(contact)) {
-      if (length(contact)/(n * n) != ni) {
-        stop('epimcmc:  Dimension of beta  and the number of contact networks are not matching')
-      }
-    network <- array(contact, c(n, n, ni))
-    
-    tmp <- .Fortran("conmcmc",
-                    tnum = as.integer(tnum),
-                    tau = as.integer(inftime),
-                    n = as.integer(n),
-                    lambda = as.integer(infperiod),
-                    tmin = as.integer(tmin),
-                    tmax = as.integer(tmax),
-                    nsim = as.integer(niter),
-                    aalpha = as.numeric(alphaini),
-                    ns = as.integer(ns),
-                    ni = as.integer(ni),
-                    bbeta = as.double(betaini),
-                    covmat = as.vector(covmat),
-                    network = as.vector(network),
-                    prostda = as.double(prostda),
-                    prostdb = as.double(prostdb),
-                    anum = as.integer(anum),
-                    bnum = as.integer(bnum),
-                    halfvar = as.double(halfvar),
-                    unifmin = as.double(unifmin),
-                    unifmax = as.double(unifmax),
-                    gshape = as.double(gshape),
-                    gscale = as.double(gscale),
-                    halfvarb = as.double(halfvarb),
-                    unifminb = as.double(unifminb),
-                    unifmaxb = as.double(unifmaxb),
-                    gshapeb = as.double(gshapeb),
-                    gscaleb = as.double(gscaleb),
-                    simalpha = matrix(0, nrow = niter, ncol = ns),
-                    simbeta = matrix(0, nrow = niter, ncol = ni),
-                    sspark = as.numeric(sparkini),
-                    flag = as.integer(flag),
-                    prostdsp = as.double(prostdsp),
-                    snum = as.integer(snum),
-                    halfvarsp = as.double(halfvarsp),
-                    unifminsp = as.double(unifminsp),
-                    unifmaxsp = as.double(unifmaxsp),
-                    gshapesp = as.double(gshapesp),
-                    gscalesp = as.double(gscalesp),
-                    simspark = as.double(rep(0, niter)),
-                    llikeval = as.double(rep(0, niter)),
-                    tempseed = as.integer(tempseed))
-                    
-    if (flag == 0) {
-        result       <- data.frame(ALPHA = tmp$simalpha, BETA = tmp$simbeta)
-       Loglikelihood <- tmp$llikeval
-    } else {
-        result        <- data.frame(ALPHA = tmp$simalpha, BETA = tmp$simbeta, SPARK = tmp$simspark)
-        Loglikelihood <- tmp$llikeval
-    }
-  }
   # mcmc result as a coda object
-  result <- coda::mcmc(result)
-  list(Estimates = result, Loglikelihood = Loglikelihood)
+
+  if (flag.trans == 1) {
+    n.trans.par <- nt
+  } else {
+    n.trans.par <- 0
+  }
+  if (flag.beta == 1) {
+    n.ker.par <- ni
+  } else {
+    n.ker.par <- 0
+  }
+
+  output <- list(type = object$type, kernel.type = kernel.type, Estimates = Estimates,
+                 Loglikelihood = Loglikelihood, Fullsample = fullsamples,
+                 n.sus.par = ns, n.trans.par = n.trans.par, n.ker.par = n.ker.par)
 
 
-# End of function
+  class(output) <- "epimcmc"
+  output
+
+} # End of function
+
+summary.epimcmc <- function(object, ...) {
+    if (class(object) != "epimcmc") {
+        stop("The object has to be of \"epimcmc\" class", call. = FALSE)
+    }
+    if (object$type == "SI") {
+        cat(paste("Model:", object$type, object$kernel.type,"\n"))
+        cat(paste("Method: Markov chain Monte Carlo (MCMC) \n"))
+        summary(window(mcmc(object$Estimates), ...))
+    } else if (object$type == "SIR") {
+        cat(paste("Model:", object$type, object$kernel.type,"\n"))
+        cat(paste("Method: Markov chain Monte Carlo (MCMC) \n"))
+        summary(window(mcmc(object$Estimates), ...))
+    }
 }
 
 
-
-
-
-
-
-
-
-
+plot.epimcmc <- function(x, partype, start = 1, end = NULL, thin = 1, ...) {
+    if (is.null(end)) {
+        end = nrow(x$Estimates)
+    }
+    if (class(x) != "epimcmc") {
+        stop("The object x has to be of \"epimcmc\" class", call. = FALSE)
+    }
+    if (partype == "parameter") {
+        plot(window(as.mcmc(x$Estimates), start = start, end = end, thin = thin), ...)
+    } else if (partype == "loglik") {
+        plot(window(as.mcmc(x$Loglikelihood), start = start, end = end, thin = thin), ...)
+    }
+}
