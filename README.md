@@ -52,7 +52,7 @@ out_cov <- epidata(type = "SI", n = 256, tmax = 10, x = x, y = y,
     Sformula = ~A, sus.par = c(0.01, 0.05), beta = 2)
 out_cov
 ``` 
-We introduce an S3 method plot functio to illustrate the spread of the epidemic timeline. The function can produce various epidemic curves by setting the arguemnt _plottype = "curve"_, and the epidemic propagation over time when the model is set to spatial-based by setting the arguemnt _plottype = "spatial"_. When the plottype = "curve", an additional argument needs to be passed through the function through curvetype. This is illustrated in the below table.
+We introduce an S3 method plot functio to illustrate the spread of the epidemic timeline. The function can produce various epidemic curves by setting the arguemnt _plottype = "curve"_, and the epidemic propagation over time when the model is set to spatial-based by setting the arguemnt _plottype = "spatial"_. When the _plottype = "curve"_, an additional argument needs to be passed through the function through curvetype. This is illustrated in the below table.
 
 | curvetype =   |  Discription 									|
 |------------- 	|:-----------------------------------------------------------------------------	|
