@@ -21,9 +21,8 @@ extern void F77_NAME(like)(void *, void *, void *, void *, void *, void *, void 
 extern void F77_NAME(likecon)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(likeconsir)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
 extern void F77_NAME(likesir)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-/* extern void F77_NAME(rconsir)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void * );
+extern void F77_NAME(rconsir)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void * );
 extern void F77_NAME(rxysir)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *);
-*/
 
 void F77_SUB(seedin)(void)
 {
@@ -52,8 +51,8 @@ static const R_FortranMethodDef FortranEntries[] = {
     {"likecon",    (DL_FUNC) &F77_NAME(likecon),    15},
     {"likeconsir", (DL_FUNC) &F77_NAME(likeconsir), 16},
     {"likesir",    (DL_FUNC) &F77_NAME(likesir),    17},
-/*    {"rconsir",    (DL_FUNC) &F77_NAME(rconsir),    16},
-    {"rxysir",     (DL_FUNC) &F77_NAME(rxysir),     17}, */
+    {"rconsir",    (DL_FUNC) &F77_NAME(rconsir),    16},
+    {"rxysir",     (DL_FUNC) &F77_NAME(rxysir),     17},
     {NULL, NULL, 0}
 };
 

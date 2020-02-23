@@ -39,7 +39,7 @@
 !######################################################################
 
     module subprograms
-    use ISO_C_BINDING
+    use, intrinsic :: iso_c_binding
     implicit none
     public :: dataxy, dataxysir, datacon, dataconsir
 
@@ -50,7 +50,6 @@
     subroutine dataxy (x, y, n, tmin, tmax, ns, nt, ni, alpha, phi, beta, spark, &
                        & covmatsus, covmattrans, tau) bind(C, name="dataxy_")
     !Epidemic simulation under purely spatial model: SI
-    implicit none
 
     external seedin
     external seedout
@@ -62,9 +61,9 @@
     real (C_DOUBLE), intent(in)    :: x(n), y(n)                 !locations
     integer (C_INT), intent(inout) :: tau(n)                     !infection times
 
-    integer          :: i, j, t, A
-    double precision :: u, dx, p
-    double precision :: eu(n,n), Somega(n), Tomega(n)
+    integer (C_INT) :: i, j, t, A
+    real (C_DOUBLE) :: u, dx, p
+    real (C_DOUBLE) :: eu(n,n), Somega(n), Tomega(n)
 
 
     !initialzing random seed
@@ -91,13 +90,13 @@
     do t = tmin, (tmax - 1)
         do i = 1, n
             if (tau(i)==0) then
-              dx = 0.0d0
+              dx = 0.0_c_double
               do j = 1,n
                 if ((tau(j) .NE. 0) .and. (tau(j) .LE. t)) then
                   dx = dx + ((eu(i,j)**(-beta(ni)))*Tomega(j))
                 end if
               end do
-            p = 1.0d0 - exp(-((Somega(i) * dx) + spark))
+            p = 1.0_c_double - exp(-((Somega(i) * dx) + spark))
             call randomnumber(u)
             if (p .GT. u) then
               tau(i) = t + 1 !time at which individuals become infected
@@ -114,7 +113,6 @@
     subroutine dataxysir (n, tmin, tmax, ns, nt, ni, alpha, phi, beta, spark, covmatsus, covmattrans, &
                     & lambda, x, y, tau, remt) bind(C, name="dataxysir_")
     !Epidemic simulation under purely spatial model: SIR
-    implicit none
 
     external seedin
     external seedout
@@ -127,9 +125,9 @@
     real (C_DOUBLE), intent(in)     :: x(n), y(n)                 !locations
     integer (C_INT), intent(inout)  :: remt(n), tau(n)            !removal time and inftime
 
-    integer          :: i, j, t, A
-    double precision :: u, dx, p
-    double precision :: eu(n,n), Somega(n), Tomega(n)
+    integer (C_INT)          :: i, j, t, A
+    real (C_DOUBLE) :: u, dx, p
+    real (C_DOUBLE) :: eu(n,n), Somega(n), Tomega(n)
 
 
     !initialzing random seed
@@ -165,7 +163,7 @@
     do t = tmin, (tmax - 1)
         do i = 1, n
             if (tau(i)==0) then
-              dx = 0.0d0
+              dx = 0.0_c_double
               do j = 1, n
                 if ((tau(j) .NE. 0) ) then
                   if ((tau(j) .LE. t) .and. ((tau(j)+lambda(j)) .GT. t)) then
@@ -173,7 +171,7 @@
                   end if
                 end if
               end do
-            p = 1.0d0 - exp(-((Somega(i) * dx) + spark))
+            p = 1.0_c_double - exp(-((Somega(i) * dx) + spark))
             call randomnumber(u)
             if (p .GT. u) then
               tau(i) = t + 1  !time at which individuals become infected
@@ -191,7 +189,6 @@
     subroutine datacon(n, tmin, tmax, ns, nt, ni, alpha, phi, beta, &
                 & spark, covmatsus, covmattrans, network, tau) bind(C, name="datacon_")
     !Epidemic simulation under contact network model: SI
-    implicit none
 
     external seedin
     external seedout
@@ -202,8 +199,8 @@
     real (C_DOUBLE), intent(in)    :: network(n,n,ni), covmatsus(n,ns), covmattrans(n,nt) !network and covariates
     integer (C_INT), intent(inout) :: tau(n)                        !inftime
 
-    integer          :: i, j, t, k, A
-    double precision :: u, dx, p, Somega(n), Tomega(n)
+    integer (C_INT) :: i, j, t, k, A
+    real (C_DOUBLE) :: u, dx, p, Somega(n), Tomega(n)
 
 
     !initialzing random seed
@@ -222,7 +219,7 @@
     do t = tmin, (tmax - 1)
         do i = 1, n
             if (tau(i)==0) then
-              dx = 0.0d0
+              dx = 0.0_c_double
               do j = 1, n
                 if ((tau(j) .NE. 0) .and. (tau(j) .LE. t)) then
                   do k = 1, ni
@@ -230,7 +227,7 @@
                   end do
                 end if
               end do
-            p = 1.0d0 - exp(-((Somega(i) * dx) + spark))
+            p = 1.0_c_double - exp(-((Somega(i) * dx) + spark))
             call randomnumber(u)
             if (p .GT. u) then
               tau(i) = t + 1  !time at which individuals become infected
@@ -247,7 +244,6 @@
     subroutine dataconsir(n, tmin, tmax, ns, nt, ni, lambda, alpha, phi, beta, &
                 & spark, covmatsus, covmattrans, network, tau, remt) bind(C, name="dataconsir_")
     !Epidemic simulation under contact network model: SIR
-    implicit none
 
     external seedin
     external seedout
@@ -260,8 +256,8 @@
     integer (C_INT), intent(inout)  :: tau(n)                        !infection times
     integer (C_INT), intent(inout)  :: remt(n)                       !removal time
 
-    integer          :: i, j, t, k, A
-    double precision :: u, dx, p, Somega(n), Tomega(n)
+    integer (C_INT) :: i, j, t, k, A
+    real (C_DOUBLE) :: u, dx, p, Somega(n), Tomega(n)
 
 
 
@@ -290,7 +286,7 @@
     do t = tmin, (tmax - 1)
         do i = 1, n
             if (tau(i)==0) then
-              dx = 0.0d0
+              dx = 0.0_c_double
               do j = 1, n
                 if (tau(j) .NE. 0)  then
                   if ((tau(j) .LE. t).and. ((tau(j) + lambda(j)) .GT. t))then
@@ -300,7 +296,7 @@
                   end if
                 end if
               end do
-            p = 1.0d0 - exp(-((Somega(i) * dx) + spark))
+            p = 1.0_c_double - exp(-((Somega(i) * dx) + spark))
             call randomnumber(u)
             if (p .GT. u) then
               tau(i) = t + 1 !time at which individuals become infected
