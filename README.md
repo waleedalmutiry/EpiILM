@@ -16,11 +16,11 @@ install.packages('EpiILM', dependencies = TRUE)
 ```
 
 You can install the **development** version from
-[Github](https://github.com/waleedalmutiry/EpiILM-package)
+[Github](https://github.com/vineetha-warriyar/EpiILM)
 
 ```s
 # install.packages("devtools")
-devtools::install_github("waleedalmutiry/EpiILM-package")
+devtools::install_github("vineetha-warriyar/EpiILM")
 ```
 
 ## Features
