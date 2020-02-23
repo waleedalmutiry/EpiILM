@@ -13,7 +13,7 @@
 as.epidata <- function(type, n, x = NULL, y = NULL, inftime, infperiod = NULL, contact = NULL) {
 
   # Error checks for input arguments
-  if (is.null(type) | !(type %in% c("SI", "SIR"))) {
+  if (any(is.null(type) | !(type %in% c("SI", "SIR"))) == TRUE) {
        stop("as.epidata: Specify type as \"SI\" or \"SIR\".", call. = FALSE)
   }
 
@@ -21,15 +21,15 @@ as.epidata <- function(type, n, x = NULL, y = NULL, inftime, infperiod = NULL, c
        stop("as.epidata: The number of individuals \"n\" has to be specified.", call. = FALSE)
   }
 
-  if (is.null(contact) &  (is.null(x) | is.null(y))) {
+  if (all(is.null(contact) &  (is.null(x) | is.null(y))) == TRUE) {
       stop('as.epidata: Specify either contact network or x, y coordinates.')
   }
 
-  if (!is.null(contact) &  (!is.null(x) | !is.null(y))) {
+  if (all(!is.null(contact) &  (!is.null(x) | !is.null(y))) == TRUE) {
       stop('as.epidata: Specify either contact network or x, y coordinates.')
   }
 
-  if (!is.null(x) & !is.null(y) ) {
+  if (all(!is.null(x) & !is.null(y)) == TRUE) {
     if ((length(y) != n) | (length(x) != n)) {
       stop('as.epidata: Length of x or y is not compatible.')
     }

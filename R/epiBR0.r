@@ -14,7 +14,7 @@ epiBR0 <- function(x = NULL, y = NULL, contact = NULL, sus.par,  trans.par = NUL
                   spark = NULL, infperiod, Sformula = NULL, Tformula = NULL, tmax, niter) {
 
   # Error checks for input arguments
-  if (is.null(contact) &  (is.null(x) | is.null(y))) {
+  if (all(is.null(contact) &  (is.null(x) | is.null(y))) == TRUE) {
     stop('epiBR0: Specify contact network or x, y coordinates')
   }
 
@@ -29,7 +29,7 @@ epiBR0 <- function(x = NULL, y = NULL, contact = NULL, sus.par,  trans.par = NUL
   if (!is.null(x)) {
     n <- length(x)
 
-    if ((length(y) != n) | (length(x) != n)) {
+    if (any((length(y) != n) | (length(x) != n)) == TRUE) {
       stop('epiBR0: Length of x or y is not compatible')
     }
   }
@@ -61,11 +61,11 @@ epiBR0 <- function(x = NULL, y = NULL, contact = NULL, sus.par,  trans.par = NUL
   if (!is.null(Sformula)) {
     covmat.sus <- model.matrix(Sformula)
 
-    if ((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
+    if (all((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) == TRUE) {
       stop('epiBR0: Check Sformula (no intercept term) and the dimension of sus.par')
     }
 
-    if ((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) {
+    if (all((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) == TRUE) {
       stop('epiBR0: Check Sformula (intercept term) and the dimension of sus.par')
     }
   } else {
@@ -82,7 +82,7 @@ epiBR0 <- function(x = NULL, y = NULL, contact = NULL, sus.par,  trans.par = NUL
   if (!is.null(Tformula)) {
     covmat.trans <- model.matrix(Tformula)
 
-    if ((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) {
+    if (all((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) == TRUE) {
       stop('epiBR0: Check Tformula (no intercept term) and the dimension of trans.par')
     }
   } else {
@@ -108,13 +108,12 @@ epiBR0 <- function(x = NULL, y = NULL, contact = NULL, sus.par,  trans.par = NUL
                     transpar = as.numeric(trans.par),
                     beta = as.numeric(beta),
                     spark = as.numeric(spark),
-                    covmatsus = as.vector(covmat.sus),
-                    covmattrans = as.vector(covmat.trans),
+                    covmatsus =  matrix(as.double(covmat.sus), ncol = ncol(covmat.sus), nrow = n),
+                    covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
                     network = as.vector(network),
                     sim = as.integer(niter),
                     val = as.double(val),
-                    countinf = as.integer(rep(0,niter))
-                    )
+                    countinf = as.integer(rep(0,niter)))
 
   result1 <- list(BasicR0 = tmp$val,
                   simulated_BR0 = tmp$countinf)
@@ -130,15 +129,14 @@ epiBR0 <- function(x = NULL, y = NULL, contact = NULL, sus.par,  trans.par = NUL
                      transpar = as.numeric(trans.par),
                      beta = as.numeric(beta),
                      spark = as.numeric(spark),
-                     covmatsus = as.vector(covmat.sus),
-                     covmattrans = as.vector(covmat.trans),
+                     covmatsus =  matrix(as.double(covmat.sus), ncol = ncol(covmat.sus), nrow = n),
+                     covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
                      lambda = as.integer(infperiod),
                      x = as.double(x),
                      y = as.double(y),
                      sim = as.integer(niter),
                      val = as.double(val),
-                     countinf = as.integer(rep(0,niter))
-                     )
+                     countinf = as.integer(rep(0,niter)))
 
   result1 <- list(BasicR0 = tmp$val,
                   simulated_BR0 = tmp$countinf)

@@ -12,7 +12,7 @@
 
 plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = NULL, timepoints = NULL, ...) {
 
-    if (class(x) != "epidata") {
+    if (!is(x, "epidata")) {
         stop("The x must be in a class of \"epidata\"", call. = FALSE)
     } else {
 
@@ -24,7 +24,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
         if (plottype == "curve") {
             # Error checks for input arguments
-            if (is.null(curvetype) | !(curvetype %in% c("complete","susceptible","totalinfect","newinfect"))) {
+            if (any(is.null(curvetype) | !(curvetype %in% c("complete","susceptible","totalinfect","newinfect"))) == TRUE) {
                 stop("epicurve: Specify plottype as \"complete\" , \"susceptible\",\"totalinfect\" or  \"newinfect\"", call. = FALSE)
             }
 
@@ -52,7 +52,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
 
                 # plot for infected and susceptible individuals
-                if (curvetype == "complete") {
+                if (all((curvetype == "complete") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, sus,
                         xlim = c(tmin, tmax), ylim = c(1, n),
@@ -63,7 +63,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                     legend("topright", inset = .001, cex = 0.8, bty = "n", c("Infected", "Susceptible"),
                     horiz = TRUE, lty = c(1, 1), lwd = c(2, 2),col = c("red", "black"))
 
-                } else if ((curvetype == "complete") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "complete") & (!is.null(timepoints))) == TRUE) {
 
                     # plot for infected and susceptible individuals with specified time points
                     plot(timerange, sus,
@@ -75,7 +75,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                     legend("topright", inset = .001, cex = 0.8, bty = "n", c("Infected", "Susceptible"),
                     horiz = TRUE, lty = c(1, 1), lwd = c(2, 2), col = c("red", "black"))
 
-                } else if ((curvetype == "totalinfect") & (is.null(timepoints))) {
+                } else if (all((curvetype == "totalinfect") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, totalinf,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(totalinf)+1)),
@@ -83,7 +83,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:max(timerange))
 
-                } else if ((curvetype == "totalinfect") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "totalinfect") & (!is.null(timepoints))) == TRUE) {
 
                     plot(timerange, totalinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1, n),
@@ -91,7 +91,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:timepoints[2])
 
-                } else if ((curvetype == "newinfect") & (is.null(timepoints))) {
+                } else if (all((curvetype == "newinfect") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, newinf,
                        xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(newinf)+1)),
@@ -99,7 +99,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                        type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:max(timerange))
 
-                } else if ((curvetype == "newinfect") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "newinfect") & (!is.null(timepoints))) == TRUE) {
 
                     plot(timerange, newinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(0, (max(newinf)+1)),
@@ -107,7 +107,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:timepoints[2])
 
-                } else if ((curvetype == "susceptible") & (is.null(timepoints))) {
+                } else if (all((curvetype == "susceptible") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, sus,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(sus)+1)),
@@ -115,7 +115,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:max(timerange))
 
-                } else if ((curvetype == "susceptible") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "susceptible") & (!is.null(timepoints))) == TRUE) {
 
                     plot(timerange, sus,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1, n),
@@ -152,7 +152,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                 }
 
                 # plot for infected and susceptible individuals
-                if ((curvetype == "complete") & (is.null(timepoints))) {
+                if (all((curvetype == "complete") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, sus,
                         xlim = c(tmin, tmax), ylim = c(1, n),
@@ -164,7 +164,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                     legend("topright", inset = .001, cex = 0.8, bty = "n", c("Infected", "Susceptible", "Removed"),
                     horiz = TRUE, lty = c(1, 1, 1), lwd = c(2, 2, 2), col = c("red", "black", "blue"))
 
-                } else if ((curvetype == "complete") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "complete") & (!is.null(timepoints))) == TRUE) {
                 # plot for infected and susceptible individuals with specified time points
 
                     plot(timerange, sus,
@@ -177,7 +177,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                     legend("topright", inset = .001, bty = "n", c("Infected", "Susceptible", "Removed"),
                     horiz = TRUE, lty = c(1, 1, 1), lwd = c(2, 2, 2), col = c("red", "black", "blue"))
 
-                } else if ((curvetype == "totalinfect") & (is.null(timepoints))) {
+                } else if (all((curvetype == "totalinfect") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, totalinf,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(totalinf)+1)),
@@ -185,7 +185,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:max(timerange))
 
-                } else if ((curvetype == "totalinfect") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "totalinfect") & (!is.null(timepoints))) == TRUE) {
 
                     plot(timerange, totalinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(0, n),
@@ -193,7 +193,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:timepoints[2])
 
-                } else if ((curvetype == "newinfect") & (is.null(timepoints))) {
+                } else if (all((curvetype == "newinfect") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, newinf,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(newinf)+1)),
@@ -201,7 +201,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:max(timerange))
 
-                } else if ((curvetype == "newinfect") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "newinfect") & (!is.null(timepoints))) == TRUE) {
 
                     plot(timerange, newinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(0, (max(newinf)+1)),
@@ -209,7 +209,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:timepoints[2])
 
-                } else if ((curvetype == "susceptible") & (is.null(timepoints))) {
+                } else if (all((curvetype == "susceptible") & (is.null(timepoints))) == TRUE) {
 
                     plot(timerange, sus,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(sus)+1)),
@@ -217,7 +217,7 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         type = "b", pch  = 20, lwd  = 2, xaxt = "n")
                     axis(1, at=1:max(timerange))
 
-                } else if ((curvetype == "susceptible") & (!is.null(timepoints))) {
+                } else if (all((curvetype == "susceptible") & (!is.null(timepoints))) == TRUE) {
 
                     plot(timerange, sus,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1, n),
