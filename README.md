@@ -3,7 +3,7 @@
 [![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/EpiILM)](https://cran.r-project.org/package=EpiILM)
 [![Downloads](https://cranlogs.r-pkg.org/badges/EpiILM)](https://cran.r-project.org/package=EpiILM)
 [![Licence](https://img.shields.io/badge/licence-GPL--3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-[![Rdoc](http://www.rdocumentation.org/badges/version/EpiILM)](https://www.rdocumentation.org/packages/EpiILMCT/versions/1.1.6.html)
+[![Rdoc](http://www.rdocumentation.org/badges/version/EpiILM)](https://www.rdocumentation.org/packages/EpiILM/versions/1.4.html)
 
 The **R** package **EpiILM** provides tools for simulating from discrete-time individual level models for infectious disease data analysis. This epidemic model class contains spatial and contact-network based models with two disease types: Susceptible-Infectious (SI) and Susceptible-Infectious-Removed (SIR).
 
