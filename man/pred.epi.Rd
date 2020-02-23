@@ -35,12 +35,12 @@ A scalar value which represents the number of samples needs to be discarded from
 \item{Sformula}{
 An object of class formula. See \link{formula}.
 
-Individual-level covariate information passable through this argument. An expression of the form \code{ ~ model} is interpreted as a specification that the susceptibility function, \eqn{\Omega_s(i) }  is modelled by a linear predictor specified symbolically by the model term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no covariate information, \code{Sformula} is null.
+Individual-level covariate information associated with susceptibility can be passed through this argument. An expression of the form \code{ ~ model} is interpreted as a specification that the susceptibility function, \eqn{\Omega_S(i) }  is modelled by a linear predictor specified symbolically by the model term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no susceptibility covariate information, \code{Sformula} is null.
 }
 \item{Tformula}{
 An object of class formula. See \link{formula}.
 
-Individual-level covariate information passable through this argument. An expression of the form \code{ ~ model} is interpreted as a specification that the transmissibility function, \eqn{\Omega_t(i) }  is modelled by a linear predictor specified symbolically by the model term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no covariate information, \code{Tformula} is null.
+Individual-level covariate information associated with transmissibility can be passed through this argument. An expression of the form \code{ ~ -1+model} is interpreted as a specification that the transmissibility function, \eqn{\Omega_T(j) }  is modelled by a linear predictor specified symbolically by the model terms without the incorporation of the intercept term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no transmissibility covariate information, \code{Tformula} is null.
 }
 
 \item{showProgressBar}{
@@ -70,6 +70,8 @@ An object of class \code{pred.epi} that contains the following:
 \examples{
 ## Example 1:  spatial SI model
 # generate 100 individuals
+
+set.seed(59991)
 
 x <- runif(100, 0, 10)
 
