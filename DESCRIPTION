@@ -1,7 +1,7 @@
 Title: Spatial and Network Based Individual Level Models for Epidemics
 Package: EpiILM
 Version: 1.5
-Date: 2020-02-22
+Date: 2020-02-23
 Depends: coda, adaptMCMC, LaplacesDemon, graphics, stats, utils, R (>= 3.5.0)
 Imports: methods
 Author: Vineetha Warriyar. K. V., Waleed Almutiry, and Rob Deardon
