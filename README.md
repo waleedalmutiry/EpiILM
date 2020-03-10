@@ -42,19 +42,19 @@ set.seed(789)
 x  <-  runif(256,  0, 100)
 y  <-  runif(256,  0, 100)
 ```
-We consider the SI spatial-based ILMs with one suceptibility covariate and no transmissibility covariates to be simulated from. First, let us generate a suceptibility covariate.
+We consider the SI spatial-based ILMs with one susceptibility covariate and no transmissibility covariates to be simulated from. First, let us generate a susceptibility covariate.
 ```s
 A <- round(rexp(256, 1/100))
 ```
-We can then generate the epidemic with two suceptibility parameters (_sus.par_), and one spatial parameter (_beta_).
+We can then generate the epidemic with two susceptibility parameters (_sus.par_), and one spatial parameter (_beta_).
 ```s 
 out_cov <- epidata(type = "SI", n = 256, tmax = 10, x = x, y = y, 
     Sformula = ~A, sus.par = c(0.01, 0.05), beta = 2)
 out_cov
 ``` 
-We introduce an S3 method plot function to illustrate the spread of the epidemic over time. The function can produce various epidemic curves by setting the arguemnt _plottype = "curve"_, and the spatial propagation over time when the model is spatial-based by setting the arguemnt _plottype = "spatial"_. When the _plottype = "curve"_, an additional argument (_curvetype_) is needed. This is illustrated in the below table.
+We introduce an S3 method plot function to illustrate the spread of the epidemic over time. The function can produce various epidemic curves by setting the argument _plottype = "curve"_, and the spatial propagation over time when the model is spatial-based by setting the argument _plottype = "spatial"_. When the _plottype = "curve"_, an additional argument (_curvetype_) is needed. This is illustrated in the below table.
 
-| curvetype =   |  Discription 									|
+| curvetype =   |  Description 									|
 |------------- 	|:-----------------------------------------------------------------------------	|
 | "complete"	| to produce curves of the number of susceptible, infected, and removed (when type = "SIR'') individuals over time. |
 | "susceptible" | to produce a single curve for the susceptible individuals over time.|
@@ -123,7 +123,7 @@ plot(mcmcout_M8, partype = "parameter", density = FALSE )
 <img src="https://user-images.githubusercontent.com/18523406/73439798-42cf6c00-4361-11ea-942d-247ac2b1d96c.png">
 </p>
 
-We now turn to techniques that can be used for model comparison. This is done using the deviance information criterion (DIC) to compare the fit of different models via the _epidic()_ function. So, we perform the MCMC analysis again without the suceptibility covariate, and then we use the _epidic()_ function to calculate the DIC value for each model. The model with lowest DIC value is deemed to have the best fit under this criterian (after allowing for stochastic variation).
+We now turn to techniques that can be used for model comparison. This is done using the deviance information criterion (DIC) to compare the fit of different models via the _epidic()_ function. So, we perform the MCMC analysis again without the susceptibility covariate, and then we use the _epidic()_ function to calculate the DIC value for each model. The model with lowest DIC value is deemed to have the best fit under this criterion (after allowing for stochastic variation).
 ```s
 mcmcout_M9 <- epimcmc(out_cov,
     tmax = t_end, niter = 50000, sus.par.ini = 0.01,
@@ -132,7 +132,7 @@ mcmcout_M9 <- epimcmc(out_cov,
     prior.beta.dist = "uniform", prior.beta.par = c(0, 10),
     adapt = TRUE, acc.rate = 0.5)
 
-# to get DIC value for the two models (with and without the suceptibility covariate)
+# to get DIC value for the two models (with and without the susceptibility covariate)
 loglike1 <- epilike(object = out_cov, tmax = t_end, Sformula = ~A, 
     sus.par = c(0.08806, 0.04421), beta = 1.96839)
 loglike2 <- epilike(object = out_cov, tmax = t_end, sus.par = 0.735, 
@@ -165,7 +165,7 @@ for(i in 1:(n-1)) {
 Now, we generate two covariates to be used as susceptibility covariates. We will also use these covariates as transmissibility covariates. As we are now in an SIR framework, we have to set the infectious period for each infective. Here, we set the infectious period to be three time points for each infected individual. The rest of the analysis follows the general framework we saw for spatial ILMs.
 
 ```s
-# Generating the susceptibility and transmissibilty covariates: 
+# Generating the susceptibility and transmissibility covariates: 
 X1 <- round(rexp(n, 1/100))
 X2 <- round(rgamma(n, 50, 0.5))
 # Simulate epidemic form SIR network-based ILM
