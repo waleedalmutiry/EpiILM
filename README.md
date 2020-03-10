@@ -25,14 +25,14 @@ devtools::install_github("vineetha-warriyar/EpiILM")
 
 ## Features
 
-The key functions of the **R** package **EpiILM** is focused on simulating from, and carrying out Bayesian MCMC-based statistical inference for spatial or network-based models in the discrete-time individual-level models (ILMs) of infectious disease transmission proposed by Deardon et al. (2010). The implemented ILMs framework in this package can be set in either susceptible-infected (SI) or susceptible-infected-removed (SIR) compartmental frameworks. For more details about the ILMs, see (Deardon et al., 2010). Table (1) illustrate the key functions of this package in which some of them, including for epidemic simulation and likelihood calculation are coded in **Fortran** in order to achieve the goal of agile implementation. 
+The key functions of the **R** package **EpiILM** is focused on simulating from, and carrying out Bayesian MCMC-based statistical inference for, spatial or, network-based discrete-time individual-level models (ILMs) of infectious disease transmission as proposed by Deardon et al. (2010). The implemented ILMs framework in this package can be set in either susceptible-infected (SI) or susceptible-infected-removed (SIR) compartmental frameworks. For more details about the ILMs, see (Deardon et al., 2010). Table (1) illustrate the key functions of this package in which some of them, including for epidemic simulation and likelihood calculation, are coded in **Fortran** in order to achieve the goal of agile implementation. 
 
 In **EpiILM**, ILMs can be fitted to observed data within a Bayesian framework. A Metropolis-Hastings MCMC algorithm is used to estimate the posterior distribution of the parameters. This can be done via the _epimcmc_ function which depends on the _MCMC_ function from the **adaptMCMC** package. 
 
-In the following section, we illustrate the use of the important features of the **EpiILM** package through both spatial and network-based ILMs.
+In the following section, we illustrate the use of some of the key features of the **EpiILM** package in the context of both spatial, and network-based, ILMs.
 
 ### Spatial-based ILMs:
-We start with generating the XY coordinates of 256 individuals coordinates uniformly across a 10 by 10 unit square area.
+We start with generating the XY coordinates of 256 individuals coordinates uniformly across a 10 by 10 unit square area. This simulated population is for illustrative purposes, the population data usually being imported for real problems.
 ```s
 library("EpiILM")
 
@@ -42,7 +42,7 @@ set.seed(789)
 x  <-  runif(256,  0, 100)
 y  <-  runif(256,  0, 100)
 ```
-We consider the SI spatial-based ILMs with one suceptibility covariate and no transmissibility covariates to be simulated from. First, let us generate the suceptibility covariate.
+We consider the SI spatial-based ILMs with one suceptibility covariate and no transmissibility covariates to be simulated from. First, let us generate a suceptibility covariate.
 ```s
 A <- round(rexp(256, 1/100))
 ```
@@ -52,7 +52,7 @@ out_cov <- epidata(type = "SI", n = 256, tmax = 10, x = x, y = y,
     Sformula = ~A, sus.par = c(0.01, 0.05), beta = 2)
 out_cov
 ``` 
-We introduce an S3 method plot functio to illustrate the spread of the epidemic timeline. The function can produce various epidemic curves by setting the arguemnt _plottype = "curve"_, and the epidemic propagation over time when the model is set to spatial-based by setting the arguemnt _plottype = "spatial"_. When the _plottype = "curve"_, an additional argument needs to be passed through the function through curvetype. This is illustrated in the below table.
+We introduce an S3 method plot function to illustrate the spread of the epidemic over time. The function can produce various epidemic curves by setting the arguemnt _plottype = "curve"_, and the spatial propagation over time when the model is spatial-based by setting the arguemnt _plottype = "spatial"_. When the _plottype = "curve"_, an additional argument (_curvetype_)is needed. This is illustrated in the below table.
 
 | curvetype =   |  Discription 									|
 |------------- 	|:-----------------------------------------------------------------------------	|
@@ -76,7 +76,7 @@ plot(out_cov, plottype = "spatial")
 <img src="https://user-images.githubusercontent.com/18523406/73443331-84fbac00-4367-11ea-9873-359bb123883f.png">
 </p>
 
-Now, we show how to perform the MCMC analysis through the use of the _epimcmc_ function that depends on the _MCMC_ function from the **adaptMCMC**.
+Now, we show how to perform an MCMC analysis through the use of the _epimcmc_ function that depends on the _MCMC_ function from the **adaptMCMC** package.
 ```s
 # to assign the tmax value of the epidemic:
 t_end <- max(out_cov$inftime)
@@ -123,7 +123,7 @@ plot(mcmcout_M8, partype = "parameter", density = FALSE )
 <img src="https://user-images.githubusercontent.com/18523406/73439798-42cf6c00-4361-11ea-942d-247ac2b1d96c.png">
 </p>
 
-Another feature of the **EpiILM** package is the techniques that can be used for model assessment. We can also calculate the deviance information criterion (DIC) to compare the fit of different models using the _epidic()_ function. So, we perform the MCMC analysis again without the suceptibility cavariate, and then we use the _epidic()_ function to get the DIC value for each model. The model with lower DIC value imlpies a significantly better fit.
+We now turn to techniques that can be used for model comparison. This is done using the deviance information criterion (DIC) to compare the fit of different models via the _epidic()_ function. So, we perform the MCMC analysis again without the suceptibility covariate, and then we use the _epidic()_ function to calculate the DIC value for each model. The model with lowest DIC value is deemed to have the best fit under this criterian (after allowing for stochastic variation).
 ```s
 mcmcout_M9 <- epimcmc(out_cov,
     tmax = t_end, niter = 50000, sus.par.ini = 0.01,
@@ -148,7 +148,7 @@ dic2
 ```
 
 ### Network-based ILMs:
-Similar to the above, but we use SIR network-based ILMs with the inclusion of both susceptibility and transmissibility covariates. So, we start with generating undirected binary contact network for a population of 500 individuals.
+Now we consider SIR network-based ILMs containing both susceptibility and transmissibility covariates. So, we start with generating an undirected binary contact network for a population of 500 individuals (for illustration).
 ```s
 # Load the EpiILM package
 library("EpiILM")
@@ -162,7 +162,8 @@ for(i in 1:(n-1)) {
 	contact[((i+1):n), i] <- contact[i, ((i+1):n)]
 	}
 ```
-Now, we generate two covariates to be used as susceptibility covariates. Also, we use these covariates as transmissibility covariates. As we use SIR ILM, we have to set the infectious period. Thus, we set the infectious period to be three time points for each infected individual. 	
+Now, we generate two covariates to be used as susceptibility covariates. We will also use these covariates as transmissibility covariates. As we are now in an SIR framework, we have to set the infectious period for each infective. Here, we set the infectious period to be three time points for each infected individual. The rest of the analysis follows the general framework we saw for spatial ILMs.
+
 ```s
 # Generating the susceptibility and transmissibilty covariates: 
 X1 <- round(rexp(n, 1/100))
@@ -224,6 +225,8 @@ plot(mcmcout_SIR.net, partype = "parameter", start = 10001, density = FALSE)
 <p align="center">
 <img src="https://user-images.githubusercontent.com/18523406/73439796-42cf6c00-4361-11ea-893a-a75257bab1f2.png">
 </p>
+
+We can also consider forecasting from a fitted model. Here we see two examples, one uses data up to time point 5 to fit the model and then forecasts forward using a posterior predictive approach. The second does the same but using data up to time point 14 to fit the model before predicting forwards in time.
 
 ```s
 # Posterior predictive forecasting
