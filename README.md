@@ -251,6 +251,9 @@ plot(pred.SIR.net.point.8, col = "red", lwd = 2, pch = 19)
 <img src="https://user-images.githubusercontent.com/18523406/73439800-42cf6c00-4361-11ea-92ef-2d5569bcea04.png">
 </p>
 
+## references
+Deardon, R., Brooks, S. P., Grenfell, B. T., Keeling, M. J., Tildesley, M. J., Savill, N. J., Shaw, D. J., and  Woolhouse, M. E. (2010). Inference for individual level models of infectious diseases in large populations. _Statistica Sinica_, **20**, 239-261.
+
 ## Built With
 
 * [R](https://cran.r-project.org) - The Comprehensive R Archive Network
