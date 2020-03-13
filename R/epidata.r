@@ -7,10 +7,10 @@
 #         Rob Deardon <robert.deardon@ucalgary.ca>
 #
 # Algorithm based on:
-#                Deardon R, Brooks, S. P., Grenfell, B. T., Keeling, M. J., Tildesley,
-#                M. J., Savill, N. J., Shaw, D. J.,  Woolhouse, M. E. (2010).
-#                Inference for individual level models of infectious diseases in large
-#                populations. Statistica Sinica, 20, 239-261.
+#         Deardon R, Brooks, S. P., Grenfell, B. T., Keeling, M. J., Tildesley,
+#         M. J., Savill, N. J., Shaw, D. J.,  Woolhouse, M. E. (2010).
+#         Inference for individual level models of infectious diseases in large
+#         populations. Statistica Sinica, 20, 239-261.
 #
 # Free software under the terms of the GNU General Public License, version 2,
 # a copy of which is available at http://www.r-project.org/Licenses/.
@@ -21,10 +21,9 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
                     inftime = NULL, infperiod = NULL, contact = NULL) {
 
   # Error checks for input arguments
-  if (is.null(type) | !(type %in% c("SI", "SIR"))) {
+  if (any(is.null(type) | !(type %in% c("SI", "SIR"))) == TRUE) {
        stop("Specify type as \"SI\" or \"SIR\" ", call. = FALSE)
   }
-
 
   ns <- length(sus.par)
   if  (!is.null(trans.par)) {
@@ -41,17 +40,17 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
 
   }
 
-  if (is.null(contact) &  (is.null(x) | is.null(y))) {
+  if (all(is.null(contact) &  (is.null(x) | is.null(y))) == TRUE) {
       stop('epidata: Specify contact network or x, y coordinates')
   }
 
   if (is.null(contact)) {
     ni <- length(beta)
     if (ni != 1) {
-      stop("epidata: Check the beta parameter input. The considered distance-based ILM needs only one spatial parameter", call. = FALSE)
+      stop("epidata: The input of beta has more than one value while the considered distance-based ILM needs only one spatial parameter, beta.", call. = FALSE)
     }
     if (!is.null(x)) {
-      if ((length(y) != n) | (length(x) != n)) {
+      if (any((length(y) != n) | (length(x) != n)) == TRUE) {
         stop('epidata: Length of x or y is not compatible ')
       }
     }
@@ -88,7 +87,7 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
         inftime <- rep(0, n)
   }
 
-  if (is.null(infperiod) & type == "SIR") {
+  if (all(is.null(infperiod) & type == "SIR") == TRUE) {
     stop(' epidata: Specify removal, infperiod')
   }
 
@@ -106,11 +105,11 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
    if (!is.null(Sformula)) {
      covmat.sus <- model.matrix(Sformula)
 
-     if ((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
+     if (all((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) == TRUE) {
        stop('epidata: Check Sformula (no intercept term) and the dimension of sus.par')
      }
 
-     if ((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) {
+     if (all((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) == TRUE) {
        stop('epidata: Check Sformula (intercept term) and the dimension of sus.par')
      }
    } else {
@@ -129,7 +128,7 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
      } else if (!is.null(Tformula)) {
    		covmat.trans <- model.matrix(Tformula)
 
-   		if ((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) {
+   		if (all((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) == TRUE) {
    			stop("epidata: Check Tformula. It has to be with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
    		}
     }
@@ -138,7 +137,7 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
    }
 
  # Calling fortran subroutine - Purely Spatial: Susceptible-Infectious(SI)
-  if ((type == "SI") & is.null(contact)) {
+  if (all((type == "SI") & is.null(contact)) == TRUE) {
     tmp <- .Fortran("dataxy",
                     x = as.vector(x, mode = "double"),
                     y = as.vector(y, mode = "double"),
@@ -161,7 +160,7 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
   }
 
  # Calling fortran subroutine - Purely Spatial: Susceptible-Infectious-Removed (SIR)
-  if ((type == "SIR") & is.null(contact)) {
+  if (all((type == "SIR") & is.null(contact)) == TRUE) {
     tmp <- .Fortran("dataxysir",
                      n = as.integer(n),
                      tmin = as.integer(tmin),
@@ -186,7 +185,7 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
   }
 
   # Calling fortran subroutine - Contact networks: Susceptible-Infectious (SI)
-  if ((type == "SI") & !is.null(contact)) {
+  if (all((type == "SI") & !is.null(contact)) == TRUE) {
     tmp <- .Fortran("datacon",
                      n = as.integer(n),
                      tmin = as.integer(tmin),
@@ -205,7 +204,7 @@ epidata <- function(type, n, tmin = NULL, tmax, sus.par, trans.par = NULL, beta 
                      )
 
     result1 <- list(type = type, XYcoordinates = cbind(x, y), contact = contact, inftime = tmp$tau)
-  } else if ((type == "SIR") & !is.null(contact)) {
+  } else if (all((type == "SIR") & !is.null(contact)) == TRUE) {
  # Calling fortran subroutine - Contact networks: Susceptible-Infectious-Removed (SIR)
     tmp <- .Fortran("dataconsir",
                      n = as.integer(n),

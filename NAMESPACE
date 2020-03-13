@@ -26,7 +26,7 @@ export(epidata)
 export(as.epidata)
 export(epilike)
 export(epimcmc)
-# export(epiBR0)
+export(epiBR0)
 export(epidic)
 export(pred.epi)
 

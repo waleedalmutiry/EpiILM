@@ -67,7 +67,7 @@ y <- runif(100, 0, 10)
 
 inftime  <- rpois(100, 8) 
 
-# Now we can convert above information to epidata object as
+# Now we can convert above information to an epidata object with
 
 out <- as.epidata(type = "SI", n = 100, x = x, y = y, inftime = inftime ) 
 out

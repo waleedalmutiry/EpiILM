@@ -25,13 +25,13 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
             prior.sus.par, prior.trans.par = NULL, prior.beta.par = NULL, prior.spark.par = NULL,
             adapt = FALSE, acc.rate = NULL) {
 
-  if (class(object) != "epidata") {
+  if (!is(object, "epidata")) {
     	stop("The object must be in a class of \"epidata\"", call. = FALSE)
   } else {
 
     # error checks for input arguments
 
-    if (is.null(object$type) | !(object$type %in% c("SI", "SIR"))) {
+    if (any(is.null(object$type) | !(object$type %in% c("SI", "SIR"))) == TRUE) {
       stop("epimcmc: Specify type as \"SI\" or \"SIR\" ", call. = FALSE)
     }
 
@@ -45,7 +45,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       infperiod = object$remtime - object$inftime
     }
 
-    if (is.null(object$contact) &  is.null(object$XYcoordinates)) {
+    if (all(is.null(object$contact) &  is.null(object$XYcoordinates)) == TRUE) {
       stop("epimcmc: Specify contact network or x, y coordinates")
     }
 
@@ -61,9 +61,9 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
     # formula for susceptibility function
     if (!is.null(Sformula)) {
       covmat.sus <- model.matrix(Sformula)
-      if ((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
+      if (all((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) == TRUE) {
         stop("epimcmc: Check Sformula (no intercept term) and the dimension of susceptibility parameters", call. = FALSE)
-      } else if ((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) {
+      } else if (all((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) == TRUE) {
         stop("epimcmc: Check Sformula (intercept term) and the dimension of susceptibility parameters", call. = FALSE)
       }
     } else {
@@ -72,7 +72,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       }
     }
 
-    if (is.null(prior.sus.dist) | !(all(prior.sus.dist %in% c("halfnormal", "gamma","uniform")))) {
+    if (any(is.null(prior.sus.dist) | !(all(prior.sus.dist %in% c("halfnormal", "gamma","uniform")))) == TRUE) {
       stop("epimcmc: Specify prior for susceptibility parameters as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
     }
 
@@ -106,8 +106,8 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       alphapar[[1]][[1]] <- "uniform" # just to fill the list and it is not being used at all.
     }
 
-    if (ns == 1 & len.alphapar != 0) {
-      if ((prior.sus.dist == "gamma") | (prior.sus.dist == "uniform")) {
+    if (all(ns == 1 & len.alphapar != 0) == TRUE) {
+      if (any((prior.sus.dist == "gamma") | (prior.sus.dist == "uniform")) == TRUE) {
         if (is.null(prior.sus.par)) {
           stop('epimcmc: Specify prior.sus.par as a vector or a 1 by 2 matrix.')
         } else {
@@ -124,12 +124,12 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
           alphapar[[1]][[2]][2] <- 0
         }
       }
-    } else if (ns == 1 & len.alphapar == 0){
+    } else if (all(ns == 1 & len.alphapar == 0) == TRUE) {
       alphapar[[1]][[2]] <- vector()
       alphapar[[1]][[2]][1] <- 0
       alphapar[[1]][[2]][2] <- 0
-    } else if (ns > 1 & len.alphapar != 0) {
-      if (is.null(prior.sus.par) |  !is.matrix(prior.sus.par)) {
+    } else if (all(ns > 1 & len.alphapar != 0) == TRUE) {
+      if (any(is.null(prior.sus.par) |  !is.matrix(prior.sus.par)) == TRUE) {
         stop('epimcmc: Specify prior.sus.par as a matrix with each row corresponds to each susceptibility parameter')
       } else {
         j <- 1
@@ -144,7 +144,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
           }
         }
       }
-    } else if (ns > 1 & len.alphapar == 0) {
+    } else if (all(ns > 1 & len.alphapar == 0) == TRUE) {
       alphapar[[1]][[2]] <- vector()
       alphapar[[1]][[2]][1] <- 0
       alphapar[[1]][[2]][2] <- 0
@@ -167,7 +167,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
         stop("epimcmc: Tformula is missing. It has to be specified with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
       } else if (!is.null(Tformula)) {
         covmat.trans <- model.matrix(Tformula)
-        if ((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) {
+        if (all((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) == TRUE) {
           stop("epimcmc: Check Tformula. It has to be with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
         }
       }
@@ -175,22 +175,22 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       covmat.trans <- matrix(1.0, nrow = n, ncol = nt)
     }
 
-    if (!is.null(prior.trans.dist) & !(all(prior.trans.dist %in% c("halfnormal", "gamma","uniform")))) {
+    if (all(!is.null(prior.trans.dist) & !(all(prior.trans.dist %in% c("halfnormal", "gamma","uniform")))) == TRUE) {
       stop("epimcmc: Specify prior for transmissibility parameters as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
     }
 
-    if (is.null(prior.trans.dist) & flag.trans == 1) {
+    if (all(is.null(prior.trans.dist) & flag.trans == 1) == TRUE) {
       stop("epimcmc: Specify prior for transmissibility parameters as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
     }
 
     # proposal variance for transmissibility parameters
     prostdt <- vector(mode = "numeric", length = nt)
-    if (flag.trans == 1 & nt == 1) {
+    if (all(flag.trans == 1 & nt == 1) == TRUE) {
       if (is.null(pro.trans.var)) {
         stop('epimcmc: Specify proposal variance for the transmissibility parameter')
       }
       prostdt <- pro.trans.var
-    } else if (flag.trans == 1 & nt > 1) {
+    } else if (all(flag.trans == 1 & nt > 1) == TRUE) {
       if (is.null(pro.trans.var)) {
         stop('epimcmc: Specify proposal variance for each transmissibility parameter')
       }
@@ -230,7 +230,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
     if (flag.trans == 1) {
 
       if (nt == 1 & len.phipar != 0) {
-        if ((prior.trans.dist == "gamma") | (prior.trans.dist == "uniform")) {
+        if (any((prior.trans.dist == "gamma") | (prior.trans.dist == "uniform")) == TRUE) {
           if (is.null(prior.trans.par)) {
             stop('epimcmc: Specify prior.trans.par as a vector or a 1 by 2 matrix.')
           } else {
@@ -247,12 +247,12 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
             phipar[[1]][[2]][2] <- 0
           }
         }
-      } else if (nt == 1 & len.phipar == 0){
+      } else if (all(nt == 1 & len.phipar == 0) == TRUE) {
         phipar[[1]][[2]] <- vector()
         phipar[[1]][[2]][1] <- 0
         phipar[[1]][[2]][2] <- 0
-      } else if (nt > 1 & len.phipar != 0) {
-        if (is.null(prior.trans.par) |  !is.matrix(prior.trans.par)) {
+      } else if (all(nt > 1 & len.phipar != 0) == TRUE) {
+        if (any(is.null(prior.trans.par) |  !is.matrix(prior.trans.par)) == TRUE) {
           stop('epimcmc: Specify prior.trans.par as a matrix with each row corresponds to each transmissibility parameter')
         } else {
           j <- 1
@@ -267,7 +267,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
             }
           }
         }
-      } else if (nt > 1 & len.phipar == 0) {
+      } else if (all(nt > 1 & len.phipar == 0) == TRUE) {
         phipar[[1]][[2]] <- vector()
         phipar[[1]][[2]][1] <- 0
         phipar[[1]][[2]][2] <- 0
@@ -280,7 +280,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
        if (length(object$contact)/(n * n) == 1) {
          ni <- 1
 
-         if (!is.null(beta.ini) | !is.null(prior.beta.dist) | !is.null(pro.beta.var) | !is.null(prior.beta.par)) {
+         if (any(!is.null(beta.ini) | !is.null(prior.beta.dist) | !is.null(pro.beta.var) | !is.null(prior.beta.par)) == TRUE) {
           stop("As the model has only one contact network, The model does not have a network parameter beta, beta.ini, prior.dist.beta, prior.beta.var, and pro.beta.var must be assigned to their default values = NULL", .call = FALSE)
          }
 
@@ -305,7 +305,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
 
          flag.beta <- 1
 
-         if (is.null(prior.beta.dist) | !(all(prior.beta.dist %in% c("halfnormal", "gamma","uniform")))) {
+         if (any(is.null(prior.beta.dist) | !(all(prior.beta.dist %in% c("halfnormal", "gamma","uniform")))) == TRUE) {
            stop("epimcmc: Specify prior for beta as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
          }
 
@@ -348,7 +348,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
          }
          # prior selection for kernel parameters
          if (len.betapar != 0) {
-           if (is.null(prior.beta.par) |  !is.matrix(prior.beta.par)) {
+           if (any(is.null(prior.beta.par) |  !is.matrix(prior.beta.par)) == TRUE) {
              stop('epimcmc: Specify prior.beta.par as a matrix with each row corresponds to each beta parameter')
            } else {
              j <- 1
@@ -382,7 +382,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
           stop("epimcmc: The input of beta.ini has more than one value while the considered distance-based ILM needs only one spatial parameter, beta.")
         }
 
-        if (is.null(prior.beta.dist) | !(all(prior.beta.dist %in% c("halfnormal", "gamma","uniform")))) {
+        if (any(is.null(prior.beta.dist) | !(all(prior.beta.dist %in% c("halfnormal", "gamma","uniform")))) == TRUE) {
           stop("epimcmc: Specify prior for beta as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
         }
 
@@ -408,7 +408,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
         }
         # prior selection for kernel parameters
         if (len.betapar != 0) {
-          if ((prior.beta.dist == "gamma") | (prior.beta.dist == "uniform")) {
+          if (any((prior.beta.dist == "gamma") | (prior.beta.dist == "uniform")) == TRUE) {
             if (is.null(prior.beta.par)) {
               stop('epimcmc: Specify prior.beta.par as a vector or a 1 by 2 matrix.')
             } else {
@@ -426,7 +426,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
             }
           }
 
-        } else if (len.betapar == 0){
+        } else if (len.betapar == 0) {
           betapar[[1]][[2]] <- vector()
           betapar[[1]][[2]][1] <- 0
           betapar[[1]][[2]][2] <- 0
@@ -443,13 +443,13 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       if (is.null(prior.spark.dist)) {
         stop("epimcmc22: Specify prior for spark", call. = FALSE)
       }
-      if (!is.null(prior.spark.dist) | !(prior.spark.dist %in% c("halfnormal", "gamma","uniform"))) {
+      if (any(!is.null(prior.spark.dist) | !(prior.spark.dist %in% c("halfnormal", "gamma","uniform"))) == TRUE) {
         stop("epimcmc2: Specify prior for spark term as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
       }
       sparkpar <- list(NULL)
       length(sparkpar) <- 2
       sparkpar[[1]] <- prior.spark.dist
-      if ((prior.spark.dist == "gamma") | (prior.spark.dist == "uniform")) {
+      if (any((prior.spark.dist == "gamma") | (prior.spark.dist == "uniform")) == TRUE) {
         if (is.null(prior.spark.par)) {
           stop('epimcmc: Specify prior.spark.par as a vector or a 1 by 2 matrix.')
         } else {
@@ -485,42 +485,42 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
 
 
 
-    if (flag == 0 & flag.trans == 0 & flag.beta == 0) {
+    if (all(flag == 0 & flag.trans == 0 & flag.beta == 0) == TRUE) {
       mcmcscale <- c(prostda)
-    } else if (flag == 0 & flag.trans == 0 & flag.beta == 1) {
+    } else if (all(flag == 0 & flag.trans == 0 & flag.beta == 1) == TRUE) {
       mcmcscale <- c(prostda, prostdb)
-    } else if (flag == 0 & flag.trans == 1 & flag.beta == 0) {
+    } else if (all(flag == 0 & flag.trans == 1 & flag.beta == 0) == TRUE) {
       mcmcscale <- c(prostda, prostdt)
-    } else if (flag == 0 & flag.trans == 1 & flag.beta == 1) {
+    } else if (all(flag == 0 & flag.trans == 1 & flag.beta == 1) == TRUE) {
       mcmcscale <- c(prostda, prostdt, prostdb)
-    } else if (flag == 1 & flag.trans == 0 & flag.beta == 0) {
+    } else if (all(flag == 1 & flag.trans == 0 & flag.beta == 0) == TRUE) {
       mcmcscale <- c(prostda, prostdsp)
-    } else if (flag == 1 & flag.trans == 0 & flag.beta == 1) {
+    } else if (all(flag == 1 & flag.trans == 0 & flag.beta == 1) == TRUE) {
       mcmcscale <- c(prostda, prostdb, prostdsp)
-    } else if (flag == 1 & flag.trans == 1 & flag.beta == 0) {
+    } else if (all(flag == 1 & flag.trans == 1 & flag.beta == 0) == TRUE) {
       mcmcscale <- c(prostda, prostdt, prostdsp)
-    } else if (flag == 1 & flag.trans == 1 & flag.beta == 1) {
+    } else if (all(flag == 1 & flag.trans == 1 & flag.beta == 1) == TRUE) {
       mcmcscale <- c(prostda, prostdt, prostdb, prostdsp)
     }
 
     scalemc <- mcmcscale[mcmcscale !=0]
 
 
-    if (flag == 0 & flag.trans == 0 & flag.beta == 0) {
+    if (all(flag == 0 & flag.trans == 0 & flag.beta == 0) == TRUE) {
       mcmcinit <- c(sus.par.ini)
-    } else if (flag == 0 & flag.trans == 0 & flag.beta == 1) {
+    } else if (all(flag == 0 & flag.trans == 0 & flag.beta == 1) == TRUE) {
       mcmcinit <- c(sus.par.ini, beta.ini)
-    } else if (flag == 0 & flag.trans == 1 & flag.beta == 0) {
+    } else if (all(flag == 0 & flag.trans == 1 & flag.beta == 0) == TRUE) {
       mcmcinit <- c(sus.par.ini, trans.par.ini)
-    } else if (flag == 0 & flag.trans == 1 & flag.beta == 1) {
+    } else if (all(flag == 0 & flag.trans == 1 & flag.beta == 1) == TRUE) {
       mcmcinit <- c(sus.par.ini, trans.par.ini, beta.ini)
-    } else if (flag == 1 & flag.trans == 0 & flag.beta == 0) {
+    } else if (all(flag == 1 & flag.trans == 0 & flag.beta == 0) == TRUE) {
       mcmcinit <- c(sus.par.ini, spark.ini)
-    } else if (flag == 1 & flag.trans == 0 & flag.beta == 1) {
+    } else if (all(flag == 1 & flag.trans == 0 & flag.beta == 1) == TRUE) {
       mcmcinit <- c(sus.par.ini, beta.ini, spark.ini)
-    } else if (flag == 1 & flag.trans == 1 & flag.beta == 0) {
+    } else if (all(flag == 1 & flag.trans == 1 & flag.beta == 0) == TRUE) {
       mcmcinit <- c(sus.par.ini, trans.par.ini, spark.ini)
-    } else if (flag == 1 & flag.trans == 1 & flag.beta == 1) {
+    } else if (all(flag == 1 & flag.trans == 1 & flag.beta == 1) == TRUE) {
       mcmcinit <- c(sus.par.ini, trans.par.ini, beta.ini, spark.ini)
     }
 
@@ -587,7 +587,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       if (flag == 1) {
         if(length(xx) < nns+nnt+nni) {
           xsp <- xx[nns+nnt+nni+1]
-        } else if (length(xx) == nns+nnt+nni & mcmcscale[ns+nt+ni+1] == 0) {
+        } else if (all(length(xx) == nns+nnt+nni & mcmcscale[ns+nt+ni+1] == 0) == TRUE) {
           xsp <- mcmcinit[ns+nt+ni+1]
         }
       } else {
@@ -596,7 +596,8 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
 
 
       loglikeILM <- epilike(object = object, tmin = tmin, tmax = tmax, sus.par = xs,
-                            trans.par = xt, beta = xi, spark = xsp, Sformula = Sformula, Tformula = Tformula)
+                            trans.par = xt, beta = xi, spark = xsp,
+                            Sformula = Sformula, Tformula = Tformula)
 
       if (nns != 0) {
         palpha = 0
@@ -615,7 +616,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
         palpha = 0
       }
 
-      if (flag.trans == 1 & nnt != 0) {
+      if (all(flag.trans == 1 & nnt != 0) == TRUE) {
         pphi = 0
         for (i in 1:nnt) {
           if (phipar[[i]][[1]] == "uniform") {
@@ -696,21 +697,21 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       }
     }
 
-    if (flag == 0 & flag.trans == 0 & flag.beta == 0) {
+    if (all(flag == 0 & flag.trans == 0 & flag.beta == 0) == TRUE) {
         nnames <- c(alphanames)
-    } else if (flag == 0 & flag.trans == 0 & flag.beta == 1) {
+    } else if (all(flag == 0 & flag.trans == 0 & flag.beta == 1) == TRUE) {
         nnames <- c(alphanames, betanames)
-    } else if (flag == 1 & flag.trans == 0 & flag.beta == 0) {
+    } else if (all(flag == 1 & flag.trans == 0 & flag.beta == 0) == TRUE) {
         nnames <- c(alphanames, "spark")
-    } else if (flag == 1 & flag.trans == 0 & flag.beta == 1) {
+    } else if (all(flag == 1 & flag.trans == 0 & flag.beta == 1) == TRUE) {
         nnames <- c(alphanames, betanames, "spark")
-    } else if (flag == 0 & flag.trans == 1 & flag.beta == 0) {
+    } else if (all(flag == 0 & flag.trans == 1 & flag.beta == 0) == TRUE) {
         nnames <- c(alphanames, phinames)
-    } else if (flag == 0 & flag.trans == 1 & flag.beta == 1) {
+    } else if (all(flag == 0 & flag.trans == 1 & flag.beta == 1) == TRUE) {
         nnames <- c(alphanames, phinames, betanames)
-    } else if (flag == 1 & flag.trans == 1 & flag.beta == 0) {
+    } else if (all(flag == 1 & flag.trans == 1 & flag.beta == 0) == TRUE) {
         nnames <- c(alphanames, phinames, "spark")
-    } else if (flag == 1 & flag.trans == 1 & flag.beta == 1) {
+    } else if (all(flag == 1 & flag.trans == 1 & flag.beta == 1) == TRUE) {
         nnames <- c(alphanames, phinames, betanames, "spark")
     }
 
@@ -763,7 +764,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
 } # End of function
 
 summary.epimcmc <- function(object, ...) {
-    if (class(object) != "epimcmc") {
+    if (!is(object, "epimcmc")) {
         stop("The object has to be of \"epimcmc\" class", call. = FALSE)
     }
     if (object$type == "SI") {
@@ -782,7 +783,7 @@ plot.epimcmc <- function(x, partype, start = 1, end = NULL, thin = 1, ...) {
     if (is.null(end)) {
         end = nrow(x$Estimates)
     }
-    if (class(x) != "epimcmc") {
+    if (!is(x, "epimcmc")) {
         stop("The object x has to be of \"epimcmc\" class", call. = FALSE)
     }
     if (partype == "parameter") {

@@ -16,13 +16,13 @@
 # a copy of which is available at http://www.r-project.org/Licenses/.
 ################################################################################
 
-pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = NULL, Sformula = NULL, Tformula = NULL,  showProgressBar = interactive()) {
+pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = NULL, Sformula = NULL, Tformula = NULL, showProgressBar = interactive()) {
 
-	if (class(object) != "epidata") {
+	if (!is(object, "epidata")) {
 		stop("The object of the epidemic data must be in a class of \"epidata\"", call. = FALSE)
 	}
 
-	if (class(xx) != "epimcmc") {
+	if (!is(xx, "epimcmc")) {
 		stop("The object of the MCMC samples must be in a class of \"epimcmc\"", call. = FALSE)
 	}
 
@@ -42,17 +42,6 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 	nt <- xx$n.trans.par
 	ni <- xx$n.ker.par
 
-    #	if (is.null(tempseed)) {
-
-    #	temp <- 0
-
-    #} else {
-
-    #	temp <- tempseed
-    #	set.seed(temp)
-
-    #}
-
     if (object$type == "SIR") {
         infperiod = object$remtime - object$inftime
     } else {
@@ -64,7 +53,6 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
                             nrow = n.samples,
                             ncol = ncol(xx$Fullsample))
 
-														xx$Fullsample[sample(seq(burnin,length(xx$Fullsample[,1])), n.samples, replace = FALSE), ]
 	newinftime <- replace(object$inftime, object$inftime > tmin, 0)
 	out1 <- vector(mode = "list", length = n.samples)
 
@@ -73,7 +61,7 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 		x <- object$XYcoordinates[,1]
 		y <- object$XYcoordinates[,2]
 
-		if ( (nt == 0) & (ns + ni) == ncol(xx$Fullsample)) {
+		if (all((nt == 0) & (ns + ni) == ncol(xx$Fullsample)) == TRUE) {
 
 			cat("generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -95,7 +83,7 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 			if (showProgressBar) {
 				close(pb)
 			}
-		} else if ( (nt > 0) & (ns + nt + ni) == ncol(xx$Fullsample)) {
+		} else if (all((nt > 0) & (ns + nt + ni) == ncol(xx$Fullsample)) == TRUE) {
 
 			cat("  generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -119,7 +107,7 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 				close(pb)
 			}
 
-		} else if ( (nt == 0) & (ns + ni) < ncol(xx$Fullsample)) {
+		} else if (all((nt == 0) & (ns + ni) < ncol(xx$Fullsample)) == TRUE) {
 
 			cat("  generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -138,13 +126,12 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 				beta = c(mcmcout_posterior[i, (ns + 1): (ns + ni)]),
 				spark = mcmcout_posterior[i, (ns + ni + 1)],
 				x = x, y = y, inftime = newinftime, infperiod = infperiod)
-               
 			}
 			if (showProgressBar) {
 				close(pb)
 			}
 
-		} else if ( (nt > 0) & (ns + nt + ni) < ncol(xx$Fullsample)) {
+		} else if (all((nt > 0) & (ns + nt + ni) < ncol(xx$Fullsample)) == TRUE) {
 
 			cat("  generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -163,7 +150,6 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 				beta = c(mcmcout_posterior[i, (ns+nt+1): (ns+nt+ni)]),
 				spark = c(mcmcout_posterior[i, (ns+nt+ni+1)]),
 				x = x, y = y, inftime = newinftime, infperiod = infperiod)
-								
 
 			}
 			if (showProgressBar) {
@@ -175,7 +161,7 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 
 		contact <- object$contact
 
-		if ( (nt == 0) & (ns + ni) == ncol(xx$Fullsample)) {
+		if (all((nt == 0) & (ns + ni) == ncol(xx$Fullsample)) == TRUE) {
 
 			cat("  generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -194,19 +180,17 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
     				sus.par = c(mcmcout_posterior[i, 1: ns]),
     				beta = c(mcmcout_posterior[i, (ns + 1): (ns + ni)]),
     				contact = contact, inftime = newinftime, infperiod = infperiod)
-          
         } else if (ni == 0) {
   				out1[[i]] <- epidata(type = object$type, n = n, tmax = t_end, Sformula = Sformula, tmin = tmin,
     				sus.par = c(mcmcout_posterior[i, 1: ns]),
     				contact = contact, inftime = newinftime, infperiod = infperiod)
-            
         }
 			}
 			if (showProgressBar) {
 				close(pb)
 			}
 
-		} else if ( (nt > 0) & (ns + nt + ni) == ncol(xx$Fullsample)) {
+		} else if (all((nt > 0) & (ns + nt + ni) == ncol(xx$Fullsample)) == TRUE) {
 
 			cat("  generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -225,19 +209,17 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
     				sus.par = c(mcmcout_posterior[i, 1:ns]), trans.par = c(mcmcout_posterior[i, (ns+1): (ns+nt)]),
     				beta = c(mcmcout_posterior[i, (ns+nt+1): (ns+nt+ni)]),
     				contact = contact, inftime = newinftime, infperiod = infperiod)
-            
         } else if (ni == 0) {
           out1[[i]] <- epidata(type = object$type, n = n, tmax = t_end, Sformula = Sformula, Tformula = Tformula, tmin = tmin,
             sus.par = c(mcmcout_posterior[i, 1:ns]), trans.par = c(mcmcout_posterior[i, (ns+1): (ns+nt)]),
             contact = contact, inftime = newinftime, infperiod = infperiod)
-            
         }
 			}
 			if (showProgressBar) {
 				close(pb)
 			}
 
-		} else if ( (nt == 0) & (ns + ni) < ncol(xx$Fullsample)) {
+		} else if (all((nt == 0) & (ns + ni) < ncol(xx$Fullsample)) == TRUE) {
 
 			cat("  generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -257,13 +239,11 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
     				beta = c(mcmcout_posterior[i, (ns + 1): (ns + ni)]),
     				spark = mcmcout_posterior[i, (ns + ni + 1)],
     				contact = contact, inftime = newinftime, infperiod = infperiod)
-           
         } else if (ni == 0) {
           out1[[i]] <- epidata(type = object$type, n = n, tmax = t_end, Sformula = Sformula, tmin = tmin,
             sus.par = c(mcmcout_posterior[i, 1: ns]),
             spark = mcmcout_posterior[i, (ns + ni + 1)],
             contact = contact, inftime = newinftime, infperiod = infperiod)
-         
         }
 			}
 
@@ -271,7 +251,7 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 				close(pb)
 			}
 
-		} else if ( (nt > 0) & (ns + nt + ni) < ncol(xx$Fullsample)) {
+		} else if (all((nt > 0) & (ns + nt + ni) < ncol(xx$Fullsample)) == TRUE) {
 
 			cat("  generate", n.samples, "epidemics \n")
 			if (showProgressBar) {
@@ -291,13 +271,11 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
             beta = c(mcmcout_posterior[i, (ns+nt+1): (ns+nt+ni)]),
             spark = c(mcmcout_posterior[i, (ns+nt+ni+1)]),
             contact = contact, inftime = newinftime, infperiod = infperiod)
-            
         } else if (ni == 0) {
           out1[[i]] <- epidata(type = object$type, n = n, tmax = t_end, Sformula = Sformula, Tformula = Tformula, tmin = tmin,
             sus.par = c(mcmcout_posterior[i, 1:ns]), trans.par = c(mcmcout_posterior[i, (ns+1): (ns+nt)]),
             spark = c(mcmcout_posterior[i, (ns+nt+ni+1)]),
             contact = contact, inftime = newinftime, infperiod = infperiod)
-           
         }
 			}
 			if (showProgressBar) {
@@ -459,7 +437,7 @@ pred.epi <- function (object, xx, criterion , n.samples, burnin = NULL, tmin = N
 
 plot.pred.epi <- function (x, ...) {
 
-	if (class(x) != "pred.epi") {
+	if (!is(x, "pred.epi")) {
 		stop("The object must be in a class of \"pred.epi\"", call. = FALSE)
 	}
 
@@ -486,8 +464,8 @@ plot.pred.epi <- function (x, ...) {
             lines(time[x$tmin:x$tmax], x$crit.sim[i,x$tmin:x$tmax], col = "grey", lwd = 0.2)
 		}
 
-        lines(time[x$tmin:x$tmax], apply(x$crit.sim[,x$tmin:x$tmax], 2, mean), lty = 1, ...)
-        lines(time, x$crit.obs, col = "black", type = "o", pch = 20, lwd = 2)
+    lines(time[x$tmin:x$tmax], apply(x$crit.sim[,x$tmin:x$tmax], 2, mean), lty = 1, ...)
+    lines(time, x$crit.obs, col = "black", type = "o", pch = 20, lwd = 2)
 
 		axis(1, at = 1:max(time))
 		lines(time[x$tmin:x$tmax], lowerq[x$tmin:x$tmax], lty = 2, ...)

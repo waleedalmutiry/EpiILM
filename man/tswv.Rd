@@ -3,7 +3,7 @@
 \alias{tswv}
 \title{Tomato Spotted Wilt Virus (TSWV) data}
 \description{
-  A real data example for the use of ILM model in cereal crops is described and the data is extracted from plots presented in Hughes et al. (1997). The data show the locations of healthy plants and plants with TSWV diseases in a field plot on 18 December 1929.
+  Data extracted from Hughes et al. (1997). Data obtained from a field experiment as the spatial dynamics of tomato spotted wilt virus (tswv). 
 }
 \usage{data(tswv)}
 \format{

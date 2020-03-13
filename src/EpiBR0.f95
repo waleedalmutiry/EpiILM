@@ -30,7 +30,7 @@
 !######################################################################
 
     module  subprogramr0
-    use ISO_C_BINDING
+    use, intrinsic :: iso_c_binding
     implicit none
     public :: rxysir,rconsir
 
@@ -42,7 +42,6 @@
                       & covmatsus, covmattrans, lambda, x, y, sim, &
                       & val, countinf)  bind(C, name="rxysir_")
     !Calculates the basic reproduction number under the spatial model
-    implicit none
 
     external seedin
     external seedout
@@ -52,19 +51,19 @@
     integer (C_INT), intent(in) :: lambda(n)                  !infperiod
 
     real (C_DOUBLE), intent(in) :: suspar(ns), transpar(nt), beta(ni), spark !parameters
-    real (C_DOUBLE), intent(in) :: covmatsus(n,ns), covmattrans(n,ns)        !susceptibility covariate
+    real (C_DOUBLE), intent(in) :: covmatsus(n,ns), covmattrans(n,nt)        !susceptibility covariate
     real (C_DOUBLE), intent(in) :: x(n), y(n)                 !locations
 
     real (C_DOUBLE), intent(inout) :: val                     !result
     integer (C_INT), intent(out)   :: countinf(sim)           !result
 
-    integer          :: i, j, t, tau(n), A
-    double precision :: u, dx, p
-    double precision :: eu(n,n), Somega(n), Tomega(n)
+    integer (C_INT) :: i, j, t, tau(n), A
+    real (C_DOUBLE) :: u, dx, p
+    real (C_DOUBLE) :: eu(n,n), Somega(n), Tomega(n)
 
     !initialzing random seed
     call seedin()
- 
+
 
     !Calculate the distance matrix
     do i = 1,n
@@ -89,11 +88,11 @@
     !Calculate the initial probability of susceptible being exposed and update tau
     do t = 1,tmax
         do i = 1,n
-          dx = 0.0d0
+          dx = 0.0_c_double
           if (tau(i)==0) then
               if ((tau(A) .LE. t) .and. ((tau(A)+lambda(A)) .GT. t)) then
                 dx = (eu(i,A)**(-beta(ni)))*Tomega(A)
-                p = 1.0d0 - exp(-((Somega(i)*dx)+spark))
+                p = 1.0_c_double - exp(-((Somega(i)*dx)+spark))
                 call randomnumber(u)
                 if (p .GT. u) then
                   tau(i) = t + 1  !time at which individual become infected/infectious
@@ -125,7 +124,6 @@
                        & spark, covmatsus, covmattrans,network, sim, &
                        & val, countinf) bind(C, name="rconsir_")
     !Calculates the basic reproduction number under the contact network model
-    implicit none
 
     external seedin
     external seedout
@@ -140,12 +138,12 @@
     real (C_DOUBLE), intent(inout) :: val                      !result
     integer (C_INT),intent(out)    :: countinf(sim)            !result
 
-    integer          :: i, j, t, k, tau(n), A
-    double precision :: u, dx, p, Somega(n), Tomega(n)
+    integer (C_INT) :: i, j, t, k, tau(n), A
+    real (C_DOUBLE) :: u, dx, p, Somega(n), Tomega(n)
 
     !initialzing random seed
     call seedin()
-    
+
 
     Somega = matmul(covmatsus,suspar) !susceptibility function
     Tomega = matmul(covmattrans,transpar) !transmissibility function
@@ -161,13 +159,13 @@
     !Calculate the initial probability of susceptible being exposed and update tau
     do t = 1, tmax
         do i = 1, n
-          dx = 0.0d0
+          dx = 0.0_c_double
           if (tau(i)==0) then
              if ((tau(A) .LE. t) .and. ((tau(A) + lambda(A)) .GT. t)) then
                 do k = 1, ni
                   dx = dx + ((beta(k) * network(i, A, k))*Tomega(A))
                 end do
-                p = 1.0d0 - (exp(-((Somega(i) * dx) + spark)))
+                p = 1.0_c_double - (exp(-((Somega(i) * dx) + spark)))
                 call randomnumber(u)
                 if (p .GT. u) then
                   tau(i) = t + 1

@@ -27,6 +27,8 @@ plot.
 ## Example :  spatial SI model
 # generate 100 individuals
 
+set.seed(59991)
+
 x <- runif(100, 0, 10)
 
 y <- runif(100, 0, 10)
@@ -38,15 +40,15 @@ out1 <- epidata(type = "SI", n = 100, Sformula = ~covariate, tmax = 15,
 
 alphapar1 <- matrix(c(1, 1, 1, 1), ncol = 2, nrow = 2)
 
-betapar1 <- c(1, 1)
+betapar1 <- c(10, 2)
 
 epi <- epimcmc(object = out1, tmin = 1, tmax = 15,
-               niter = 1000, sus.par.ini = c(1, 1), beta.ini = 1,
-               Sformula = ~covariate, pro.sus.var = c(0.5, 0.3), pro.beta.var = 0.1,
+               niter = 1000, sus.par.ini = c(0.1, 0.1), beta.ini = 5,
+               Sformula = ~covariate, pro.sus.var = c(0.2, 0.3), pro.beta.var = 0.8,
                prior.sus.dist = c("gamma", "gamma"), prior.beta.dist = "gamma",
                prior.sus.par = alphapar1, prior.beta.par = betapar1,
                adapt = TRUE, acc.rate = 0.5)
 
 # plot estimates
-plot(epi, partype = "parameter")
+plot(epi, partype = "parameter", start = 100)
 }

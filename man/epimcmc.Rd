@@ -51,12 +51,12 @@ Initial value(s) of the transmissibility parameter(s) (>0).
 \item{Sformula}{
 	An object of class formula. See \link{formula}
 
-	Individual-level covariate information associated with susceptibility can be passed through this argument. An expression of the form \code{ ~ model} is interpreted as a specification that the susceptibility function, \eqn{\Omega_s(i) }  is modelled by a linear predictor specified symbolically by the model term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no covariate information, \code{Sformula} is null.
+Individual-level covariate information associated with susceptibility can be passed through this argument. An expression of the form \code{ ~ model} is interpreted as a specification that the susceptibility function, \eqn{\Omega_S(i) }  is modelled by a linear predictor specified symbolically by the model term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no susceptibility covariate information, \code{Sformula} is null.
 }
 \item{Tformula}{
 	An object of class formula. See \link{formula}
 
-	Individual-level covariate information associated with transmissibility can be passed through this argument. An expression of the form \code{ ~ model} is interpreted as a specification that the susceptibility function, \eqn{\Omega_t(i) }  is modelled by a linear predictor specified symbolically by the model term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no covariate information, \code{Tformula} is null.
+Individual-level covariate information associated with transmissibility can be passed through this argument. An expression of the form \code{ ~ -1+model} is interpreted as a specification that the transmissibility function, \eqn{\Omega_T(j) }  is modelled by a linear predictor specified symbolically by the model terms without the incorporation of the intercept term. Such a model consists of a series of terms separated by \code{+} and \code{-} operators. If there is no transmissibility covariate information, \code{Tformula} is null.
 }
 \item{pro.sus.var}{
 	Proposal density variance(s) for susceptibility parameter(s). If a zero value is assigned to the proposal variance of any parameter, the parameter is considered fixed to its \code{sus.par.ini} value.
@@ -97,7 +97,7 @@ A vector (matrix) of the prior distribution parameters for updating the transmis
 	A vector of the prior distribution parameters for updating the spark parameter.
 	}
 \item{adapt}{
-	To enable the adapted MCMC method in the \code{\link{MCMC}} function, default is FALSE.
+	To enable the adaptive MCMC method in the \code{\link{MCMC}} function, default is FALSE.
 	}
 \item{acc.rate}{
 	To set an acceptance rate. This option will be ignored if \code{adapt} = FALSE. See \code{\link{MCMC}} for more details.
@@ -121,7 +121,7 @@ Returns an object of class \code{epimcmc} that contains:
 
 \details{
 
-Independent Gaussian random walks are used as the Metropolis-Hastings MCMC proposal for all parameters
+Independent Gaussian random walks are used as the Metropolis-Hastings MCMC proposal for all parameters. The \code{epimcmc} function depends on the \code{\link{MCMC}} function from the \pkg{\link{adaptMCMC}} package.
 
 }
 \seealso{
@@ -145,7 +145,7 @@ out1 <- epidata(type = "SI", n = 100, Sformula = ~covariate, tmax = 15,
 
 alphapar1 <- matrix(c(1, 1, 1, 1), ncol = 2, nrow = 2)
 
-betapar1 <- c(1, 1)
+betapar1 <- c(10, 2)
 
 epi <- epimcmc(object = out1, tmin = 1, tmax = 15,
                niter = 1000, sus.par.ini = c(1, 1), beta.ini = 1,
@@ -177,5 +177,5 @@ epi2
 
 
 \references{
-Rob Deardon, Xuan Fang, and Grace P. S. Kwong (2014). Statistical modelling of spatio-temporal infectious disease tranmission in Analyzing and Modeling Spatial and Temporal Dynamics of Infectious Diseases, \emph{(Ed: D. Chen, B. Moulin, J. Wu), John Wiley & Sons.}. Chapter 11.
+Rob Deardon, Xuan Fang, and Grace P. S. Kwong (2015). Statistical modelling of spatio-temporal infectious disease tranmission in Analyzing and Modeling Spatial and Temporal Dynamics of Infectious Diseases, \emph{(Ed: D. Chen, B. Moulin, J. Wu), John Wiley & Sons.}. Chapter 11.
 }

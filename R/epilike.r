@@ -21,12 +21,12 @@
 epilike <- function(object, tmin = NULL, tmax, sus.par, trans.par = NULL,
                     beta = NULL, spark = NULL, Sformula = NULL, Tformula = NULL) {
 
-if (class(object) != "epidata") {
+if (!is(object, "epidata")) {
    stop("The object must be in a class of \"epidata\"", call. = FALSE)
 } else {
 
   # Error checks for input arguments
-  if (is.null(object$type) | !(object$type %in% c("SI", "SIR"))) {
+  if (any(is.null(object$type) | !(object$type %in% c("SI", "SIR"))) == TRUE) {
     stop("epilike: Specify type as \"SI\" or \"SIR\" ", call. = FALSE)
   }
 
@@ -47,11 +47,11 @@ if (class(object) != "epidata") {
   }
   n <- length(object$inftime)
 
-  if (is.null(object$contact) &  is.null(object$XYcoordinates)) {
+  if (all(is.null(object$contact) &  is.null(object$XYcoordinates)) == TRUE) {
       stop('epilike: Specify contact network or x, y coordinates')
   }
 
-  if (is.null(object$remtime) & object$type == "SIR") {
+  if (all(is.null(object$remtime) & object$type == "SIR") == TRUE) {
     stop(' epilike: Specify removal times')
   }
 
@@ -98,9 +98,9 @@ if (class(object) != "epidata") {
   	if (!is.null(Sformula)) {
   		covmat.sus <- model.matrix(Sformula)
 
-  		if ((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) {
+  		if (all((ncol(covmat.sus) == length(all.vars(Sformula))) & (ns != length(all.vars(Sformula)))) == TRUE) {
   			stop("epilike: Check Sformula (no intercept term) and the dimension of susceptibility parameters", call. = FALSE)
-  		} else if ((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) {
+  		} else if (all((ncol(covmat.sus) > length(all.vars(Sformula))) & (ns != ncol(covmat.sus))) == TRUE) {
   			stop("epilike: Check Sformula (intercept term) and the dimension of susceptibility parameters", call. = FALSE)
   		}
   	} else {
@@ -116,7 +116,7 @@ if (class(object) != "epidata") {
       } else if (!is.null(Tformula)) {
     		covmat.trans <- model.matrix(Tformula)
 
-    		if ((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) {
+    		if (all((ncol(covmat.trans) == length(all.vars(Tformula))) & (nt != length(all.vars(Tformula)))) == TRUE) {
     			stop("epilike: Check Tformula. It has to be with no intercept term and number of columns equal to the length of trans.par", call. = FALSE)
     		}
       }
@@ -126,7 +126,7 @@ if (class(object) != "epidata") {
 
 # Calling fortran subroutines for Purely Spatial models : SI and SIR
 
-  if ((object$type == "SI") & is.null(object$contact)) {
+  if (all((object$type == "SI") & is.null(object$contact)) == TRUE) {
 
     tmp1 <- .Fortran("like",
                    x = as.vector(object$XYcoordinates[,1], mode = "double"),
@@ -146,7 +146,7 @@ if (class(object) != "epidata") {
                    covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
                    val = as.double(0))
 
-  } else if ((object$type == "SIR") & is.null(object$contact)) {
+  } else if (all((object$type == "SIR") & is.null(object$contact)) == TRUE) {
 
     tmp1 <- .Fortran("likesir",
                     x = as.vector(object$XYcoordinates[,1], mode = "double"),
@@ -167,7 +167,7 @@ if (class(object) != "epidata") {
                     covmattrans = matrix(as.double(covmat.trans), ncol = ncol(covmat.trans), nrow = n),
                     val = as.double(0))
 
-  } else if ((object$type == "SI") & !is.null(object$contact)) {
+  } else if (all((object$type == "SI") & !is.null(object$contact)) == TRUE) {
     tmp1 <- .Fortran("likecon",
                     tau = as.vector(object$inftime, mode = "integer"),
                     n = as.integer(n),
@@ -185,7 +185,7 @@ if (class(object) != "epidata") {
                     network = as.vector(network),
                     val = as.double(0))
 
-  } else if ((object$type == "SIR") & !is.null(object$contact)) {
+  } else if (all((object$type == "SIR") & !is.null(object$contact)) == TRUE) {
 
     # Calling fortran subroutines for Contact network models: SI and SIR
 
