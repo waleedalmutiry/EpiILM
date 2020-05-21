@@ -63,7 +63,7 @@
 
     integer (C_INT) :: i, j, t, A
     real (C_DOUBLE) :: u, dx, p
-    real (C_DOUBLE) :: eu(n,n), Somega(n), Tomega(n)
+    real (C_DOUBLE) :: Somega(n), Tomega(n)
 
 
     !initialzing random seed
@@ -76,12 +76,12 @@
     end if
 
     !Calculate the distance matrix
-    do i = 1, n
-        do j = i, n
-            eu(i,j) = sqrt(((x(i)-x(j))**2)+((y(i)-y(j))**2))
-            eu(j,i) = eu(i,j)
-        end do
-    end do
+!    do i = 1, n
+!        do j = i, n
+!            eu(i,j) = sqrt(((x(i)-x(j))**2)+((y(i)-y(j))**2))
+!            eu(j,i) = eu(i,j)
+!        end do
+!    end do
 
     Somega = matmul(covmatsus, alpha) !susceptibility function
     Tomega = matmul(covmattrans, phi) !transmissibility function
@@ -93,7 +93,7 @@
               dx = 0.0_c_double
               do j = 1,n
                 if ((tau(j) .NE. 0) .and. (tau(j) .LE. t)) then
-                  dx = dx + ((eu(i,j)**(-beta(ni)))*Tomega(j))
+                  dx = dx + ((sqrt(((x(i)-x(j))**2)+((y(i)-y(j))**2))**(-beta(ni)))*Tomega(j))
                 end if
               end do
             p = 1.0_c_double - exp(-((Somega(i) * dx) + spark))
@@ -104,7 +104,7 @@
             end if
         end do
     end do
-    
+
     call seedout()
     end subroutine dataxy
 
@@ -127,7 +127,7 @@
 
     integer (C_INT)          :: i, j, t, A
     real (C_DOUBLE) :: u, dx, p
-    real (C_DOUBLE) :: eu(n,n), Somega(n), Tomega(n)
+    real (C_DOUBLE) :: Somega(n), Tomega(n)
 
 
     !initialzing random seed
@@ -149,12 +149,12 @@
    end if
 
     !Calculate the distance matrix
-    do i = 1, n
-        do j = i, n
-            eu(i,j) = sqrt(((x(i)-x(j))**2)+((y(i)-y(j))**2))
-            eu(j,i) = eu(i,j)
-        end do
-    end do
+!    do i = 1, n
+!        do j = i, n
+!            eu(i,j) = sqrt(((x(i)-x(j))**2)+((y(i)-y(j))**2))
+!            eu(j,i) = eu(i,j)
+!        end do
+!    end do
 
     Somega = matmul(covmatsus, alpha) !susceptibility function
     Tomega = matmul(covmattrans, phi) !transmissibility function
@@ -167,7 +167,7 @@
               do j = 1, n
                 if ((tau(j) .NE. 0) ) then
                   if ((tau(j) .LE. t) .and. ((tau(j)+lambda(j)) .GT. t)) then
-                    dx = dx + ((eu(i,j)**(-beta(ni)))*Tomega(j))
+                    dx = dx + ((sqrt(((x(i)-x(j))**2)+((y(i)-y(j))**2))**(-beta(ni)))*Tomega(j))
                   end if
                 end if
               end do
@@ -235,7 +235,7 @@
             end if
         end do
     end do
-    
+
     call seedout()
     end subroutine datacon
 
