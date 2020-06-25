@@ -443,7 +443,7 @@ epimcmc <- function (object, tmin = NULL, tmax, niter,
       if (is.null(prior.spark.dist)) {
         stop("epimcmc22: Specify prior for spark", call. = FALSE)
       }
-      if (any(!is.null(prior.spark.dist) | !(prior.spark.dist %in% c("halfnormal", "gamma","uniform"))) == TRUE) {
+      if (any(is.null(prior.spark.dist) | !(prior.spark.dist %in% c("halfnormal", "gamma","uniform"))) == TRUE) {
         stop("epimcmc2: Specify prior for spark term as \"halfnormal\" ,  \"gamma\" or \"uniform\"  ", call. = FALSE)
       }
       sparkpar <- list(NULL)
