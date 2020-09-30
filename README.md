@@ -20,7 +20,7 @@ You can install the **development** version from
 
 ```s
 # install.packages("devtools")
-devtools::install_github("vineetha-warriyar/EpiILM")
+devtools::install_github("waleeedalmutiry/EpiILM")
 ```
 
 ## Features
