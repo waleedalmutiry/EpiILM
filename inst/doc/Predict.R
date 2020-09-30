@@ -1,16 +1,15 @@
 ### R code from vignette source 'Predict.Rnw'
 
 ###################################################
-### code chunk number 1: Predict.Rnw:38-42
+### code chunk number 1: Predict.Rnw:40-43
 ###################################################
 options(continue="  ", width=60)
-options(SweaveHooks=list(fig=function() par(mar=c(3.1, 4.1, 3.1, 1.1))))
 pdf.options(pointsize=8) #text in graph about the same as regular text
 library(EpiILM, quietly=TRUE)
 
 
 ###################################################
-### code chunk number 2: Predict.Rnw:45-52
+### code chunk number 2: Predict.Rnw:47-54
 ###################################################
 set.seed(101)
 n <- 100
@@ -22,7 +21,7 @@ for(i in 1:(n-1)) {
 
 
 ###################################################
-### code chunk number 3: Predict.Rnw:63-66
+### code chunk number 3: Predict.Rnw:65-68
 ###################################################
 set.seed(101)
 netdat <- epidata( type = "SI", n = 100, tmax = 25,  sus.par = 0.1, 
@@ -30,7 +29,7 @@ netdat <- epidata( type = "SI", n = 100, tmax = 25,  sus.par = 0.1,
 
 
 ###################################################
-### code chunk number 4: Predict.Rnw:71-75
+### code chunk number 4: Predict.Rnw:73-77
 ###################################################
 t_end <- max(netdat$inftime)
 mcmcout_net <- epimcmc(object = netdat,  tmax = t_end,
@@ -41,12 +40,11 @@ mcmcout_net <- epimcmc(object = netdat,  tmax = t_end,
 ###################################################
 ### code chunk number 5: nettrace
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 plot(mcmcout_net, partype = "parameter", start = 10001, density = FALSE)
 
 
 ###################################################
-### code chunk number 6: Predict.Rnw:85-92
+### code chunk number 6: Predict.Rnw:89-96
 ###################################################
 set.seed(1001)
 pred.net.15 <- pred.epi(netdat, xx = mcmcout_net, tmin = 15, 
@@ -60,19 +58,17 @@ pred.net.20 <- pred.epi(netdat, xx = mcmcout_net, tmin = 20,
 ###################################################
 ### code chunk number 7: t15
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 plot(pred.net.15, col = "red", lwd = 2, pch = 19)
 
 
 ###################################################
 ### code chunk number 8: t20
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 plot(pred.net.20, col = "red", lwd = 2, pch = 19)
 
 
 ###################################################
-### code chunk number 9: Predict.Rnw:115-123
+### code chunk number 9: Predict.Rnw:123-131
 ###################################################
 # simulate spatial locations
 set.seed(101)
@@ -87,7 +83,6 @@ SI.cov <- epidata(type = "SI", n = 100, tmax = 25, x = x, y = y,
 ###################################################
 ### code chunk number 10: tM1
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 t_end <- max(SI.cov$inftime)
 prior_par <- matrix(rep(1, 4), ncol = 2, nrow = 2)
 mcmcout_M1 <- epimcmc(SI.cov, Sformula = ~A, tmax = t_end, niter = 50000, 
@@ -102,7 +97,7 @@ plot(mcmcout_M1, partype = "parameter", start = 10001, density = FALSE)
 
 
 ###################################################
-### code chunk number 11: Predict.Rnw:151-157
+### code chunk number 11: Predict.Rnw:161-167
 ###################################################
 set.seed(101)
 mcmcout_M2 <- epimcmc(SI.cov, tmax = t_end, niter = 50000, sus.par.ini = 0.01, 
@@ -115,14 +110,13 @@ mcmcout_M2 <- epimcmc(SI.cov, tmax = t_end, niter = 50000, sus.par.ini = 0.01,
 ###################################################
 ### code chunk number 12: tM2
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 summary(mcmcout_M2,  start = 10001)  
 # MCMC traceplot for the estimation of the model (3) parameters
 plot(mcmcout_M2, partype = "parameter", start = 10001, density = FALSE)
 
 
 ###################################################
-### code chunk number 13: Predict.Rnw:167-175
+### code chunk number 13: Predict.Rnw:179-187
 ###################################################
 set.seed(101)
 pred.model1 <- pred.epi(SI.cov, Sformula = ~A, xx = mcmcout_M1, 
@@ -137,19 +131,17 @@ pred.model2 <- pred.epi(model2.data, xx = mcmcout_M2,
 ###################################################
 ### code chunk number 14: predictM1
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 plot(pred.model1, col = "red", type = "b", lwd = 2)
 
 
 ###################################################
 ### code chunk number 15: predictM2
 ###################################################
-getOption("SweaveHooks")[["fig"]]()
 plot(pred.model2, col = "red", type = "b", lwd = 2)
 
 
 ###################################################
-### code chunk number 16: Predict.Rnw:193-198
+### code chunk number 16: Predict.Rnw:209-214
 ###################################################
 loglike <- epilike(SI.cov, tmax = t_end, Sformula = ~A, sus.par = c(0.597, 1.071),
                                          beta = 6.606)
@@ -159,7 +151,7 @@ dic1
 
 
 ###################################################
-### code chunk number 17: Predict.Rnw:202-205
+### code chunk number 17: Predict.Rnw:218-221
 ###################################################
 loglike <- epilike(model2.data, tmax = t_end,  sus.par = 6.210, beta = 4.942)
 dic2 <- epidic(burnin = 10000, niter = 50000, LLchain = mcmcout_M2$Loglikelihood,

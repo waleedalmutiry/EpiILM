@@ -3,6 +3,8 @@
 \usepackage{Sweave}
 \usepackage{amsmath}
 \usepackage{hyperref}
+\usepackage{graphicx}
+
 \addtolength{\textwidth}{1in}
 \addtolength{\oddsidemargin}{-.5in}
 \setlength{\evensidemargin}{\oddsidemargin}
@@ -16,7 +18,7 @@
 \renewenvironment{Schunk}{\vspace{\topsep}}{\vspace{\topsep}}
 
 \SweaveOpts{prefix.string=prediction,width=6,height=4}
-\setkeys{Gin}{width=\textwidth}
+\setkeys{Gin}{width=0.8\textwidth}
 %\VignetteIndexEntry{Posterior Predictive Forecasting and Model Assessment}
 
 
@@ -32,15 +34,15 @@
     \section{Posterior Predictive Forecasting}
     Once we have fitted an ILM to the epidemic data (see \cite{pre}), we can use it to make forecasts related to future epidemic activity. This can be especially useful in the midst of an unfolding epidemic, allowing us to make predictions about how an epidemic is about to unfold by simulating from a model fitted to the data so far observed. We can do this within the context of EpiILM. 
     
-    In EpiILM package, we define a function \texttt{pred.epi} for getting realizations from the posterior predictive distribution of various epidemiological statistics. Thus, \texttt{pred.epi} can be used for forecasting future epidemic activity among the population.  The output of the function \texttt{pred.epi} is set as an object of class "pred.epi" and it contains a list of objects, some of which are  "criterion'" for the used statistic, "crit.sim'" and "crit.obs" for the statistical results of the simulated and observed epidemic data. For graphical illustration of the predictions we introduce another S3 method plot function, \texttt{plot.pred.epi}. 
+    In EpiILM package, we define a function \texttt{pred.epi} for getting realizations from the posterior predictive distribution of various epidemiological statistics. Thus, \texttt{pred.epi} can be used for forecasting future epidemic activity among the population.  The output of the function \texttt{pred.epi} is set as an object of class \texttt{pred.epi} and it contains a list of objects, some of which are \texttt{criterion} for the used statistic, ``\texttt{crit.sim}'' and ``\texttt{crit.obs}'' for the statistical results of the simulated and observed epidemic data. For graphical illustration of the predictions we introduce another S3 method plot function, \texttt{plot.pred.epi}. 
     
 To illustrate this, let's consider modelling the spread of a disease through a series of farms ($n$ = 100) in a region. We assume that we have no individual-level covariates about the animals or farms, other than whether the farms share the same feed supply feed truck. Now we can generate such an undirected contact network as
 <<echo=FALSE, results=tex>>=
 options(continue="  ", width=60)
-options(SweaveHooks=list(fig=function() par(mar=c(3.1, 4.1, 3.1, 1.1))))
 pdf.options(pointsize=8) #text in graph about the same as regular text
 library(EpiILM, quietly=TRUE)
 @
+%options(SweaveHooks=list(fig=function() par(mar=c(3.1, 4.1, 3.1, 1.1))))
 
 <<echo=TRUE, results=tex>>=
 set.seed(101)
@@ -76,9 +78,11 @@ mcmcout_net <- epimcmc(object = netdat,  tmax = t_end,
 @
 
 The MCMC traceplot for the estimation of the model (\ref*{eq10}) parameters is given by 
-<<nettrace, echo=TRUE, fig=TRUE, include=TRUE, results=tex>>=
+\begin{center}
+<<nettrace, echo=TRUE, fig=TRUE, include=TRUE>>=
 plot(mcmcout_net, partype = "parameter", start = 10001, density = FALSE)
 @
+\end{center}
     
 Having fitted our network-based ILM to the epidemic (\texttt{netdat}) in a Bayesian framework, we assume that the epidemic is observed up to time point $t$. Thus, we can simulate forward from time point $t$, conditioning upon the infection pattern already observed in the data. For example, assume we have observed the epidemic until time point 15. i.e., $t = 15$. Using \texttt{pred.epi} we can simulate, say, 500 posterior predictive forecasts from $t = 15$ by setting \texttt{criterion = "newly infectious"}. Following code illustrate the predictions for $t = 15$ and $t = 20$.
 
@@ -94,14 +98,18 @@ pred.net.20 <- pred.epi(netdat, xx = mcmcout_net, tmin = 20,
 
 To plot the above predicted epidemics from time points 15 and 20 we can use the following code. The observed epidemic curve is presented in solid black colour with average of posterior prediction in solid red and corresponding $95\%$ credible intervals (dotted red) for each starting time point.
     
+\begin{center}
 <<t15, echo=TRUE, fig=TRUE, include=TRUE>>=
 plot(pred.net.15, col = "red", lwd = 2, pch = 19)
 @
+\end{center}
     
   
+\begin{center}
 <<t20, echo=TRUE, fig=TRUE, include=TRUE>>=
 plot(pred.net.20, col = "red", lwd = 2, pch = 19)
 @
+\end{center}
     
   \section{Model Selection}
 Another important feature in this package is the techniques that can be used for model assessment. In general, of course, we are not analyzing simulated data, but real data for which we do not know the underlying model. Once we have the posterior distribution of our statistic of interest, we can compare it with observed data  either via a posterior predictive $p$ value or simply graphically.  In infectious disease models, we commonly use some form of epidemic curve  as our (multivariate) statistical interest, e.g., the number of newly infectious  individuals  over time. Other  commonly used statistics are the length of the epidemic or the time of, or prevalence at, the peak of the epidemic. Again, using \texttt{pred.epi} we can obtain the posterior predictive distributions of these statistics for model assessment and the type of the statistic can be specified through the argument \texttt{criterion} with three options: "newly infectious" for the number of newly infectious individuals over time, "epidemic length'' for the length of the epidemic, and "peak time'' for the time of, or prevalence at, the peak of the epidemic. We can also calculate the deviance information criterion (DIC) to compare the fit of different models (\cite{dic}) using the \texttt{epidic} function. The input for this function consists of log-likelihood values of the MCMC output and the log-likelihood under the posterior mean estimates of the parameters.
@@ -125,6 +133,7 @@ SI.cov <- epidata(type = "SI", n = 100, tmax = 25, x = x, y = y,
 
 We can now refit the generating model to this simulated data and consider the posterior estimates of the model parameters. 
 
+\begin{center}
 <<tM1, echo=TRUE, fig=TRUE, include=TRUE>>=
 t_end <- max(SI.cov$inftime)
 prior_par <- matrix(rep(1, 4), ncol = 2, nrow = 2)
@@ -138,6 +147,7 @@ summary(mcmcout_M1, start = 10001)
 #  MCMC traceplot for the estimation of the model (2) parameters
 plot(mcmcout_M1, partype = "parameter", start = 10001, density = FALSE)
 @
+\end{center}
 
 Let's assume we wish to fit a spatial model that does not include the number of animals effect, i.e., a model of the form:
       \begin{equation}
@@ -157,11 +167,13 @@ mcmcout_M2 <- epimcmc(SI.cov, tmax = t_end, niter = 50000, sus.par.ini = 0.01,
                       prior.beta.par = c(0, 10000))
 @
 The estimate of the posterior mean of the parameters and $95\%$ credible intervals after 10000 iterations of burn-in have been removed are
+\begin{center}
 << tM2, echo=TRUE, fig=TRUE, include=TRUE>>=
 summary(mcmcout_M2,  start = 10001)  
 # MCMC traceplot for the estimation of the model (3) parameters
 plot(mcmcout_M2, partype = "parameter", start = 10001, density = FALSE)
 @
+\end{center}
 
 For model comaprison let's say, we are interested in the epidemic curve in the form of the number of newly infected individuals over time. First, we will generate 500 posterior predictive epidemics using the MCMC output obtained from model (\ref*{eq1}) and (\ref*{eq2})
 <<echo=TRUE, results=tex>>=
@@ -177,15 +189,19 @@ pred.model2 <- pred.epi(model2.data, xx = mcmcout_M2,
 
 In order to assess the model fit, we can plot  the posterior predictive realizations, the time-wise 95\% credible intervals, and the true epidemic curve from the above posterior predictions. The observed epidemic curve (solid black) with average of posterior prediction (solid red) and corresponding  $95\%$ credible intervals for model (\ref*{eq1}) and (\ref*{eq2}) are shown in the following figures. The grey lines are the 500 MCMC samples.
 For model \ref*{eq1}
+\begin{center}
 <<predictM1, echo=TRUE, fig=TRUE, include=TRUE>>=
 plot(pred.model1, col = "red", type = "b", lwd = 2)
 @
+\end{center}
 
 and for model \ref*{eq2}
 
+\begin{center}
 <<predictM2, echo=TRUE, fig=TRUE, include=TRUE>>=
 plot(pred.model2, col = "red", type = "b", lwd = 2)
 @
+\end{center}
 
 We can see from the above posterior predictive plots that, both the correct model and mis-specified model fare similarly well when considering a comparison of the original epidemic curve and the posterior predictive distribution of said curve, although the posterior uncertainty is greater under the mis-specified model. 
     
