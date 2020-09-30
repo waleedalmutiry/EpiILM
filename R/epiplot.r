@@ -54,29 +54,51 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                 # plot for infected and susceptible individuals
                 if (all((curvetype == "complete") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
+				    
                     plot(timerange, sus,
                         xlim = c(tmin, tmax), ylim = c(1, n),
-                        main = "Epidemic Curves", ylab = "Number of individuals ", xlab = "time",
-                        type = "l", lwd  = 2, cex  = 0.5, xaxt = "n")
-                    lines(timerange, totalinf, col = "red",lwd = 2)
-                    axis(1, at=1:tmax)
-                    legend("topright", inset = .001, cex = 0.8, bty = "n", c("Infected", "Susceptible"),
-                    horiz = TRUE, lty = c(1, 1), lwd = c(2, 2),col = c("red", "black"))
+                        main = "Epidemic Curves", ylab = "Number of individuals ", xlab = "Time",
+                        type = "l", lwd  = 2, cex  = 1, xaxt = "n")
+                    lines(timerange, totalinf, col = "red", lwd = 2)
+                    axis(1, at = 1:tmax)
+					opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+					mar = c(0, 0, 0, 0), new = TRUE)
+					on.exit(par(opar), add = TRUE)
+					plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+					legend("bottom", c("Infected", "Susceptible"), col = c("red", "black"),
+					lty = c(1, 1), lwd = c(2, 2), bty = "n", horiz = TRUE, cex = 1)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(1,1))
+					on.exit(par(op), add = TRUE)
 
                 } else if (all((curvetype == "complete") & (!is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     # plot for infected and susceptible individuals with specified time points
                     plot(timerange, sus,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1,n),
                         main = "Epidemic Curves", ylab = "Number of individuals", xlab = "time",
-                        type = "l", lwd  = 2, cex  = 0.5, xaxt = "n")
+                        type = "l", lwd  = 2, cex  = 1, xaxt = "n")
                     lines(timerange, totalinf, col = "red", lwd = 2)
                     axis(1, at=1:timepoints[2])
-                    legend("topright", inset = .001, cex = 0.8, bty = "n", c("Infected", "Susceptible"),
-                    horiz = TRUE, lty = c(1, 1), lwd = c(2, 2), col = c("red", "black"))
+					opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+					mar = c(0, 0, 0, 0), new = TRUE)
+					on.exit(par(opar), add = TRUE)
+					plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+					legend("bottom", c("Infected", "Susceptible"), col = c("red", "black"),
+					lty = c(1, 1), lwd = c(2, 2), bty = "n", horiz = TRUE, cex = 1)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(1,1))
+					on.exit(par(op), add = TRUE)
 
                 } else if (all((curvetype == "totalinfect") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, totalinf,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(totalinf)+1)),
                         main = "Epidemic Curve", ylab = "Number of infected individuals", xlab = "time",
@@ -85,6 +107,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "totalinfect") & (!is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, totalinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1, n),
                         main = "Epidemic Curve", ylab = "Number of infected individuals", xlab = "time",
@@ -93,6 +118,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "newinfect") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, newinf,
                        xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(newinf)+1)),
                        main = "Epidemic Curve", ylab = "Number of new infections", xlab = "time",
@@ -101,6 +129,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "newinfect") & (!is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, newinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(0, (max(newinf)+1)),
                         main = "Epidemic Curve", ylab = "Number of new infections", xlab = "time",
@@ -109,6 +140,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "susceptible") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, sus,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(sus)+1)),
                         main = "Epidemic Curve", ylab = "Number of susceptibles", xlab = "time",
@@ -117,6 +151,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "susceptible") & (!is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, sus,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1, n),
                         main = "Epidemic Curve", ylab = "Number of susceptibles", xlab = "time",
@@ -154,19 +191,31 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                 # plot for infected and susceptible individuals
                 if (all((curvetype == "complete") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, sus,
                         xlim = c(tmin, tmax), ylim = c(1, n),
                         main = "Epidemic Curve", ylab = "Number of individuals", xlab = "time",
-                        type = "l", lwd  = 2, cex  = 0.5, xaxt = "n")
+                        type = "l", lwd  = 2, cex  = 1, xaxt = "n")
                     lines(timerange, totalinf, col = "red", lwd = 2)
                     lines(timerange, removed, col = "blue", lwd = 2)
                     axis(1, at=1:tmax)
-                    legend("topright", inset = .001, cex = 0.8, bty = "n", c("Infected", "Susceptible", "Removed"),
-                    horiz = TRUE, lty = c(1, 1, 1), lwd = c(2, 2, 2), col = c("red", "black", "blue"))
+					opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+					mar = c(0, 0, 0, 0), new = TRUE)
+					on.exit(par(opar), add = TRUE)
+					plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+					legend("bottom", c("Infected", "Susceptible", "Removed"), col = c("red", "black","blue"),
+					lty = c(1, 1, 1), lwd = c(2, 2, 2), bty = "n", horiz = TRUE, cex = 1)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(1,1))
+					on.exit(par(op), add = TRUE)
 
                 } else if (all((curvetype == "complete") & (!is.null(timepoints))) == TRUE) {
                 # plot for infected and susceptible individuals with specified time points
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, sus,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1,n),
                         main = "Epidemic Curve", ylab = "Number of individuals", xlab = "time",
@@ -174,11 +223,20 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                     lines(timerange, totalinf, col = "red", lwd = 2)
                     lines(timerange, removed, col = "blue", lwd = 2)
                     axis(1, at=1:timepoints[2])
-                    legend("topright", inset = .001, bty = "n", c("Infected", "Susceptible", "Removed"),
-                    horiz = TRUE, lty = c(1, 1, 1), lwd = c(2, 2, 2), col = c("red", "black", "blue"))
+					opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+					mar = c(0, 0, 0, 0), new = TRUE)
+					on.exit(par(opar), add = TRUE)
+					plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+					legend("bottom", c("Infected", "Susceptible", "Removed"), col = c("red", "black","blue"),
+					lty = c(1, 1, 1), lwd = c(2, 2, 2), bty = "n", horiz = TRUE, cex = 1)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = c(1,1))
+					on.exit(par(op), add = TRUE)
 
                 } else if (all((curvetype == "totalinfect") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, totalinf,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(totalinf)+1)),
                         main = "Epidemic Curve", ylab = "Number of infected individuals", xlab = "time",
@@ -187,6 +245,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "totalinfect") & (!is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, totalinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(0, n),
                         main = "Epidemic Curve", ylab = "Number of infected individuals", xlab = "time",
@@ -195,6 +256,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "newinfect") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, newinf,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(newinf)+1)),
                         main = "Epidemic Curve", ylab = "Number of new infections", xlab = "time",
@@ -203,6 +267,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "newinfect") & (!is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, newinf,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(0, (max(newinf)+1)),
                         main = "Epidemic Curve", ylab = "Number of new infections", xlab = "time",
@@ -211,6 +278,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "susceptible") & (is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, sus,
                         xlim = c(min(timerange), max(timerange)), ylim = c(0, (max(sus)+1)),
                         main = "Epidemic Curve", ylab = "Number of susceptibles", xlab = "time",
@@ -219,6 +289,9 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
                 } else if (all((curvetype == "susceptible") & (!is.null(timepoints))) == TRUE) {
 
+				    op1 <- par(no.readonly = TRUE)
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = c(1,1))
                     plot(timerange, sus,
                         xlim = c(timepoints[1], timepoints[2]), ylim = c(1, n),
                         main = "Epidemic Curve", ylab = "Number of susceptibles", xlab = "time",
@@ -232,15 +305,22 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
 
 			op1 <- par(no.readonly = TRUE)
 
-            old.par <- par(mfrow = c(3,3))
-            par(cex = 0.5)
-            par(xpd = TRUE)
-
     # plots for susceptible- infected (SI)
             if (x$type == "SI") {
                 dat <- data.frame(x$XYcoordinates, x$inftime)
                 # no specific time point (s)
                 if (is.null(time_id)) {
+					ntimes <- max(x$inftime) - tmin + 1
+					mfrow1 <- switch(min(ntimes,13), c(1,1), c(1,2), c(2,2), c(2,2), c(3,2), c(3,2), 
+					c(3,3), c(3,3), c(3,3), c(3,2), c(3,2), c(3,2), c(3,3))
+					
+					sepwindow <- seq(prod(mfrow1), prod(mfrow1)*ceiling(ntimes/prod(mfrow1)), 
+					by = prod(mfrow1))
+					
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = mfrow1)
+					u <- 1
+					
                     for (i in tmin:max(x$inftime)) {
                         xcc <- subset(dat, dat$x.inftime <= i & dat$x.inftime != 0)
                         xx    = x$XYcoordinates[,1]
@@ -248,13 +328,33 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         plot(xx, yy,
                         xlim = c(min(xx), max(xx)),
                         ylim = c(min(yy), max(yy)),
-                        sub  = paste("time ", i))
+                        main  = paste("time ", i), cex = 1, ...)
                         points(xcc[,1], xcc[,2], pch = 16, col = "red")
-                        op <- par(usr = c(0, 1, 0, 1), xpd = NA)
-                        legend(-.03, 1.15, c("Infected", "Susceptible"), col = c("red", "black"),
-                        pch = c(16, 21), bty = "n", horiz = TRUE)
+						
+                        if (any(u == sepwindow) | (u == ntimes)) {
+                            opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                            mar = c(0, 0, 0, 0), new = TRUE)
+                            on.exit(par(opar), add = TRUE)
+                            plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                            legend("bottom", c("Infected", "Susceptible"), col = c("red", "black"),
+							pch = c(16, 21), bty = "n", horiz = TRUE, cex = 1.5)
+							op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = mfrow1)
+						   	on.exit(par(op), add = TRUE)
+						}
+						u <- u + 1
                     }
+
                 } else if (!is.null(time_id)) {
+					ntimes <- length(time_id)
+					mfrow1 <- switch(min(ntimes,13), c(1,1), c(1,2), c(2,2), c(2,2), c(3,2), c(3,2), 
+					c(3,3), c(3,3), c(3,3), c(3,2), c(3,2), c(3,2), c(3,3))
+					
+					sepwindow <- seq(prod(mfrow1), prod(mfrow1)*ceiling(length(time_id)/prod(mfrow1)), 
+					by = prod(mfrow1))
+										
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = mfrow1)
+
                     for (i in 1:length(time_id)) {
                         xcc <- subset(dat, dat$x.inftime <= time_id[i] & dat$x.inftime != 0)
                         xx    = x$XYcoordinates[,1]
@@ -262,17 +362,35 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         plot(xx, yy,
                         xlim = c(min(xx), max(xx)),
                         ylim = c(min(yy), max(yy)),
-                        sub  = paste("time ", time_id[i]))
+                        main  = paste("time ", time_id[i]), cex = 1, ...)
                         points(xcc[,1], xcc[,2], pch = 16, col = "red")
-                        op <- par(usr = c(0, 1, 0, 1), xpd = NA)
-                        legend(-.03, 1.15, c("Infected", "Susceptible"), col = c("red", "black"),
-                        pch = c(16,21), bty = "n", horiz = TRUE)
+                        if (any(i == sepwindow) | (i == length(time_id))) {
+                            opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                            mar = c(0, 0, 0, 0), new = TRUE)
+                            on.exit(par(opar), add = TRUE)
+                            plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                              legend("bottom", c("Infected", "Susceptible"), col = c("red", "black"),
+							 pch = c(16, 21), bty = "n", horiz = TRUE, cex = 1.5)
+							op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = mfrow1)
+						   	on.exit(par(op), add = TRUE)
+						}
                     }
                 }
             # end if - SI model
             } else if (x$type == "SIR") {
                 dat <- data.frame(x$XYcoordinates, x$inftime, x$remtime)
                 if (is.null(time_id)) {
+					ntimes <- max(x$inftime) - tmin + 1
+					mfrow1 <- switch(min(ntimes,13), c(1,1), c(1,2), c(2,2), c(2,2), c(3,2), c(3,2), 
+					c(3,3), c(3,3), c(3,3), c(3,2), c(3,2), c(3,2), c(3,3))
+					
+					sepwindow <- seq(prod(mfrow1), prod(mfrow1)*ceiling(ntimes/prod(mfrow1)), 
+					by = prod(mfrow1))
+					
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = mfrow1)
+					u <- 1
+					
                     for(i in tmin:max(x$inftime)) {
                         xcc <- subset(dat, dat$x.inftime <= i & dat$x.inftime != 0)
                         xx    = x$XYcoordinates[,1]
@@ -281,16 +399,37 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         xlim = c(min(xx), max(xx)),
                         ylim = c(min(yy), max(yy)),
                         pch  = 21,
-                        sub  = paste("time ", i))
+                        main  = paste("time ", i), cex = 1)#, ...)
                         xred <- subset(xcc, i < xcc[,4])
                         points(xred[,1], xred[,2], pch = 16, col = "red")
                         xblue <- subset(xcc, i >= xcc[,4])
                         points(xblue[,1], xblue[,2], pch = 16, col = "blue")
-                        op <- par(usr = c(0, 1, 0, 1), xpd = NA)
-                        legend(-.03, 1.15, c("Infected","Susceptible", "Removed"), col = c("red", "black", "blue"),
-                        pch = c(16, 21, 16), bty = "n", horiz = TRUE)
+
+                        if (any(u == sepwindow) | (u == ntimes)) {
+                            opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                            mar = c(0, 0, 0, 0), new = TRUE)
+                            on.exit(par(opar), add = TRUE)
+                            plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+                            legend("bottom", c("Infected", "Susceptible", "Removed"), 
+                            col = c("red", "black", "blue"), pch = c(16, 21, 16), 
+                            bty = "n", horiz = TRUE, cex = 1.5)
+						    op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						    mfrow = mfrow1)
+						   	on.exit(par(op), add = TRUE)
+						}
+						u <- u + 1
                     }
                 } else if (!is.null(time_id)) {
+					ntimes <- length(time_id)
+					mfrow1 <- switch(min(ntimes,13), c(1,1), c(1,2), c(2,2), c(2,2), c(3,2), c(3,2), 
+					c(3,3), c(3,3), c(3,3), c(3,2), c(3,2), c(3,2), c(3,3))
+					
+					sepwindow <- seq(prod(mfrow1), prod(mfrow1)*ceiling(length(time_id)/prod(mfrow1)), 
+					by = prod(mfrow1))
+										
+					op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), 
+						      mfrow = mfrow1)
+
                     for (i in 1:length(time_id)) {
                         xcc <- subset(dat, dat$x.inftime <= time_id[i] & dat$x.inftime != 0)
                         xx    = x$XYcoordinates[,1]
@@ -299,20 +438,28 @@ plot.epidata <- function(x, plottype, curvetype = NULL, time_id = NULL, tmin = N
                         xlim = c(min(xx), max(xx)),
                         ylim = c(min(yy), max(yy)),
                         pch  = 21,
-                        sub  = paste("time ", time_id[i]))
+                        main  = paste("time ", time_id[i]), cex = 1, ...)
                         xred <- subset(xcc, time_id[i] < xcc[,4])
                         points(xred[,1], xred[,2], pch = 16, col = "red")
                         xblue <- subset(xcc, time_id[i] >= xcc[,4])
                         points(xblue[,1], xblue[,2], pch = 16, col = "blue")
-                        op <- par(usr = c(0, 1, 0, 1), xpd = NA)
-                        legend(-.03, 1.15, c("Infected", "Susceptible", "Removed"), col = c("red", "black", "blue"),
-                        pch = c(16, 21, 16), bty = "n", horiz = TRUE)
+                        if (any(i == sepwindow) | (i == length(time_id))) {
+                            opar <- par(fig = c(0, 1, 0, 1), oma = c(0, 0, 0, 0),
+                            mar = c(0, 0, 0, 0), new = TRUE)
+                            on.exit(par(opar), add = TRUE)
+                            plot(0, 0, type = 'n', bty = 'n', xaxt = 'n', yaxt = 'n')
+	                        legend(-.03, 1.15, c("Infected", "Susceptible", "Removed"), 
+	                        col = c("red", "black", "blue"), pch = c(16, 21, 16), 
+	                        bty = "n", horiz = TRUE, cex = 1)
+							op <- par(mar = c(5.9, 4.0, 1.5, 0.5), omi = c(0.2, 0.05, 0.15, 0.15), mfrow = mfrow1)
+						   	on.exit(par(op), add = TRUE)
+						}
                     }
                 }
             # end if - SIR model
             }
 
-            par(old.par)
+#            par(old.par)
 
 			on.exit(par(op1))
 
